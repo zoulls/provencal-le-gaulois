@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bitbucket.org/zoulls/provencal-le-gaulois/config"
-	"bitbucket.org/zoulls/provencal-le-gaulois/pkg/logger"
-	"bitbucket.org/zoulls/provencal-le-gaulois/pkg/reply"
-	"bitbucket.org/zoulls/provencal-le-gaulois/pkg/twitter"
 	"github.com/bwmarrin/discordgo"
+	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
+	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
 )
 
 var (

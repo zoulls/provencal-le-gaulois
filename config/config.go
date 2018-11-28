@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"bitbucket.org/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
