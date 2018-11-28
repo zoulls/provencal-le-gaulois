@@ -1,0 +1,17 @@
+{
+    "name": "Provencal le Gaulois",
+    "status": "Chanter à La Volette",
+    "prefixCmd": "~",
+    "twitter": {
+        "twitterFollows": [
+            {
+                "name": "GAME_NEWS",
+                "list": ["567491918","2420931980","161223454","306490355","803542770", "1171755060"]
+            },
+            {
+                "name": "GAME_STORE",
+                "list": ["18334111","36803580","11167502"]
+            }
+        ]
+    }
+}
