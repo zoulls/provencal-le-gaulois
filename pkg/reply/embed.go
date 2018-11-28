@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"time"
 
-	"bitbucket.org/zoulls/provencal-le-gaulois/config"
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
+	"github.com/zoulls/provencal-le-gaulois/config"
 )
 
 func help() *discordgo.MessageEmbed {
