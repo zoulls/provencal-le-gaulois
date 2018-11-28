@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"bitbucket.org/zoulls/provencal-le-gaulois/config"
 	"github.com/bwmarrin/discordgo"
+	"github.com/zoulls/provencal-le-gaulois/config"
 )
 
 func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.MessageSend, error) {
