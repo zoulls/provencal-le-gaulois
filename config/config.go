@@ -5,18 +5,19 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 )
 
 // BOT
 type Config struct {
-	Auth      *AuthConfig
-	Name      string
-	Status    string
-	PrefixCmd string
-	Twitter   *Twitter
+	Auth         *AuthConfig
+	Name         string
+	Status       string
+	PrefixCmd    string
+	Twitter      *Twitter
+	StatusUpdate bool
 }
 
 type AuthConfig struct {

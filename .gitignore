@@ -37,6 +37,7 @@
 
 ### VisualStudioCode ###
 .vscode/*
+debug
 
 ### Windows ###
 # Windows thumbnail cache files
