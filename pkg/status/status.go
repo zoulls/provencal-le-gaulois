@@ -23,7 +23,7 @@ func Update(s *discordgo.Session) error {
 	status := "Shadowbringers !"
 	if diff.Seconds() > float64(0) {
 		out := time.Time{}.Add(diff)
-		status = fmt.Sprintf("attendre %s pour Shadowbringers", out.Format("15h 04m 05s"))
+		status = fmt.Sprintf("attendre %s pour Shadowbringers", out.Format("15h 04m"))
 	}
 
 	return s.UpdateStatus(0, status)
