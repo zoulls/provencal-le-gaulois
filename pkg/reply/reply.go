@@ -32,7 +32,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 		case config.PrefixCmd + "embedGen":
 			reply.Embed = embedGenerator()
 		case config.PrefixCmd + "updateStatus":
-			err = status.Update(s)
+			err = status.Update(s, true)
 			if err != nil {
 				logger.Log.Printf("Error attempting to set my status, %v\n", err)
 				reply.Content = "Error during the update status"

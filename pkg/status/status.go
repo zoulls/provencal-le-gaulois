@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+
+	"github.com/zoulls/provencal-le-gaulois/config"
 )
 
 const (
@@ -15,7 +17,14 @@ const (
 
 var lastSync = time.Now()
 
-func Update(s *discordgo.Session) error {
+func Update(s *discordgo.Session, force bool) error {
+	conf := config.GetConfig()
+
+	// Avoid to many update
+	if !force && !moreThan(conf.StatusUpdate.Every) {
+		return nil
+	}
+
 	deadline, err := time.Parse(timeFormat, shDate)
 	if err != nil {
 		return err
@@ -35,4 +44,10 @@ func Update(s *discordgo.Session) error {
 
 func GetLastSync() string {
 	return lastSync.String()
+}
+
+// Return if the last sync is older than the min in minutes
+func moreThan(min float64) bool {
+	diff := time.Since(lastSync)
+	return diff.Minutes() > min
 }

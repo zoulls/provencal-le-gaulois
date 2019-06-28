@@ -29,16 +29,15 @@ func StreamTweets(discord *discordgo.Session) {
 	defer api.Close()
 
 	for t := range s.C {
-		if conf.StatusUpdate {
-			err := status.Update(discord)
+		if conf.StatusUpdate.Enabled {
+			err := status.Update(discord, false)
 			if err != nil {
 				logger.Log.Printf("Error attempting to set my status, %v\n", err)
 			}
 		}
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
-			// qucick fix to remove sync tweet
-			if originalTweet(tweet) && tweet.User.IdStr != "2899773086" {
+			if originalTweet(tweet) {
 				err := createMessage(discord, &tweet)
 				if err != nil {
 					logger.Log.Printf("Error during send message of tweet : %v \n", tweet)

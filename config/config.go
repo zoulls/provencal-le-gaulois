@@ -17,7 +17,7 @@ type Config struct {
 	Status       string
 	PrefixCmd    string
 	Twitter      *Twitter
-	StatusUpdate bool
+	StatusUpdate *StatusUpdate
 }
 
 type AuthConfig struct {
@@ -42,6 +42,11 @@ type TwitterConfig struct {
 	AccessTokenSecret string
 	ConsumerKey       string
 	ConsumerSecret    string
+}
+
+type StatusUpdate struct {
+	Enabled bool
+	Every   float64
 }
 
 var config *Config

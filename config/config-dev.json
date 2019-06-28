@@ -11,12 +11,11 @@
             {
                 "name": "GAME_STORE",
                 "list": ["2899773086"]
-            },
-            {
-                "name": "SYNC",
-                "list": ["2899773086"]
             }
         ]
     },
-    "statusUpdate": false
+    "statusUpdate": {
+        "enabled": false,
+        "every": 5
+    }
 }
