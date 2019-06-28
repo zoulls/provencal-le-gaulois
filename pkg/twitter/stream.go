@@ -6,9 +6,11 @@ import (
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
+	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 )
 
 func getAPI() *anaconda.TwitterApi {
@@ -37,6 +39,12 @@ func StreamTweets(discord *discordgo.Session) {
 				err := createMessage(discord, &tweet)
 				if err != nil {
 					logger.Log.Printf("Error during send message of tweet : %v \n", tweet)
+				}
+				if conf.StatusUpdate {
+					err = status.Update(discord)
+					if err != nil {
+						logger.Log.Printf("Error attempting to set my status, %v\n", err)
+					}
 				}
 			}
 		default:
