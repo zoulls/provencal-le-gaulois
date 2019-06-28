@@ -39,7 +39,8 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 			} else {
 				reply.Content = "Status updated successfully !"
 			}
-
+		case config.PrefixCmd + "statusLastSync":
+			reply.Content = status.GetLastSync()
 		default:
 			return nil, nil
 		}

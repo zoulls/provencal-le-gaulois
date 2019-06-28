@@ -13,6 +13,8 @@ const (
 	shDate     = "2019-06-28 09:00 UTC"
 )
 
+var lastSync = time.Now()
+
 func Update(s *discordgo.Session) error {
 	deadline, err := time.Parse(timeFormat, shDate)
 	if err != nil {
@@ -26,5 +28,11 @@ func Update(s *discordgo.Session) error {
 		status = fmt.Sprintf("attendre %s pour Shadowbringers", out.Format("15h 04m"))
 	}
 
+	lastSync = time.Now()
+
 	return s.UpdateStatus(0, status)
+}
+
+func GetLastSync() string {
+	return lastSync.String()
 }
