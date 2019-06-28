@@ -56,9 +56,6 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// DEBUG
-	// fmt.Printf("Message: %+v || From: %s\n", m.Message, m.Author)
-
 	res, err := reply.GetReply(s, m)
 	if err != nil {
 		logger.Log.Printf("Message send error: %+v\n", err)
