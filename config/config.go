@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -12,8 +13,9 @@ import (
 
 // BOT
 type Config struct {
+	ID           string
 	Auth         *AuthConfig
-	Redis        RedisConfig
+	Redis        *RedisConfig
 	Name         string
 	Status       string
 	PrefixCmd    string
@@ -27,8 +29,8 @@ type AuthConfig struct {
 
 type RedisConfig struct {
 	Host string
-	Port int32
-	Pool int32
+	Port string
+	Pool int64
 }
 
 // TWITTER
@@ -105,6 +107,20 @@ func GetConfig() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
+	redisPool, err := strconv.ParseInt(os.Getenv("REDIS_PORT"), 10, 64)
+	if err != nil {
+		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
+	}
+	conf.Redis = &RedisConfig{
+		Host: os.Getenv("REDIS_HOST"),
+		Port: os.Getenv("REDIS_PORT"),
+		Pool: redisPool,
+	}
+
 	logger.Log.Printf("Env: %s\n", os.Getenv("BOT_ENV"))
 	return conf
+}
+
+func (c *Config) SetID(id string) {
+	c.ID = id
 }

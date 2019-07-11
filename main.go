@@ -5,7 +5,9 @@ import (
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
+	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
 )
 
@@ -14,16 +16,34 @@ var (
 )
 
 func main() {
+	// Config
 	config := config.GetConfig()
+
+	// Redis client
+	rClient, err := redis.NewClient()
+	if err != nil {
+		logger.Log.Print("Error during Redis init\n")
+		panic(err)
+	}
+
+	// Discord client
 	discord, err := discordgo.New("Bot " + config.Auth.Secret)
 	errCheck("error creating discord session", err)
 	user, err := discord.User("@me")
 	errCheck("error retrieving account", err)
-
 	botID = user.ID
+
+	// Get default status
+	sClient := status.New(config, rClient)
+	status, err := sClient.GetDefault()
+	if err != nil {
+		logger.Log.Print("Error during status init\n")
+		panic(err)
+	}
+
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, config.Status)
+		err = discord.UpdateStatus(0, *status)
 		if err != nil {
 			logger.Log.Printf("Error attempting to set my status\n")
 		}
