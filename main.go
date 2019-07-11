@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/bwmarrin/discordgo"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
@@ -55,9 +56,6 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Do nothing because the bot is talking
 		return
 	}
-
-	// DEBUG
-	// fmt.Printf("Message: %+v || From: %s\n", m.Message, m.Author)
 
 	res, err := reply.GetReply(s, m)
 	if err != nil {

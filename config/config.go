@@ -13,6 +13,7 @@ import (
 // BOT
 type Config struct {
 	Auth         *AuthConfig
+	Redis        RedisConfig
 	Name         string
 	Status       string
 	PrefixCmd    string
@@ -22,6 +23,12 @@ type Config struct {
 
 type AuthConfig struct {
 	Secret string
+}
+
+type RedisConfig struct {
+	Host string
+	Port int32
+	Pool int32
 }
 
 // TWITTER
