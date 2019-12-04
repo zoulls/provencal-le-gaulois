@@ -14,5 +14,8 @@
             }
         ]
     },
-    "statusUpdate": false
+    "statusUpdate": {
+        "enabled": false,
+        "every": 5
+    }
 }

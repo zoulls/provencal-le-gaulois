@@ -44,3 +44,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[metadata.heroku]
+  root-package = "github.com/zoulls/provencal-le-gaulois"
+  go-version = "1.11.1"

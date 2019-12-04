@@ -6,6 +6,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 )
 
 func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.MessageSend, error) {
@@ -14,22 +16,34 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	config := config.GetConfig()
 	reply := &discordgo.MessageSend{}
 
-	switch {
-	case m.Content == config.PrefixCmd+"ping":
-		reply.Content = "Pong! :ping_pong:"
-	case m.Content == config.PrefixCmd+"pong":
-		reply.Content = "Ping! :ping_pong: petit malin! :laughing:"
-	case m.Content == config.PrefixCmd+"help":
-		reply.Embed = help()
-	case m.Content == config.PrefixCmd+"embedGen":
-		reply.Embed = embedGenerator()
-	case strings.HasPrefix(m.Content, config.PrefixCmd+"embed "):
+	if strings.HasPrefix(m.Content, config.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
 			err = s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
 		}
-	default:
-		return nil, nil
+	} else {
+		switch m.Content {
+		case config.PrefixCmd + "ping":
+			reply.Content = "Pong! :ping_pong:"
+		case config.PrefixCmd + "pong":
+			reply.Content = "Ping! :ping_pong: petit malin! :laughing:"
+		case config.PrefixCmd + "help":
+			reply.Embed = help()
+		case config.PrefixCmd + "embedGen":
+			reply.Embed = embedGenerator()
+		case config.PrefixCmd + "updateStatus":
+			err = status.Update(s, true)
+			if err != nil {
+				logger.Log.Printf("Error attempting to set my status, %v\n", err)
+				reply.Content = "Error during the update status"
+			} else {
+				reply.Content = "Status updated successfully !"
+			}
+		case config.PrefixCmd + "statusLastSync":
+			reply.Content = status.GetLastSync()
+		default:
+			return nil, nil
+		}
 	}
 
 	return reply, err

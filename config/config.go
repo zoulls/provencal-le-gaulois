@@ -17,7 +17,7 @@ type Config struct {
 	Status       string
 	PrefixCmd    string
 	Twitter      *Twitter
-	StatusUpdate bool
+	StatusUpdate *StatusUpdate
 }
 
 type AuthConfig struct {
@@ -44,6 +44,11 @@ type TwitterConfig struct {
 	ConsumerSecret    string
 }
 
+type StatusUpdate struct {
+	Enabled bool
+	Every   float64
+}
+
 var config *Config
 
 func init() {
@@ -59,7 +64,12 @@ func GetConfig() *Config {
 		return config
 	}
 
-	viper.SetConfigName("config")   // name of config file (without extension)
+	configName := os.Getenv("CONFIG_FILENAME")
+	if configName == "" {
+		configName = "config"
+	}
+
+	viper.SetConfigName(configName) // name of config file (without extension)
 	viper.AddConfigPath(".")        // optionally look for config in the working directory
 	viper.AddConfigPath("./config") // optionally look for config in the working directory
 	err = viper.ReadInConfig()      // Find and read the config file
@@ -67,10 +77,12 @@ func GetConfig() *Config {
 		panic(fmt.Errorf("Fatal error config file, %v\n", err))
 	}
 
-	// Load .env var
-	err = godotenv.Load()
-	if err != nil {
-		panic(fmt.Errorf("Error loading .env file, %v\n", err))
+	if _, err := os.Stat(".env"); err == nil {
+		// Load .env var
+		err = godotenv.Load()
+		if err != nil {
+			panic(fmt.Errorf("Error loading .env file, %v\n", err))
+		}
 	}
 
 	conf := &Config{}
