@@ -77,10 +77,12 @@ func GetConfig() *Config {
 		panic(fmt.Errorf("Fatal error config file, %v\n", err))
 	}
 
-	// Load .env var
-	err = godotenv.Load()
-	if err != nil {
-		panic(fmt.Errorf("Error loading .env file, %v\n", err))
+	if _, err := os.Stat(".env"); err == nil {
+		// Load .env var
+		err = godotenv.Load()
+		if err != nil {
+			panic(fmt.Errorf("Error loading .env file, %v\n", err))
+		}
 	}
 
 	conf := &Config{}
