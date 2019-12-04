@@ -64,7 +64,12 @@ func GetConfig() *Config {
 		return config
 	}
 
-	viper.SetConfigName("config")   // name of config file (without extension)
+	configName := os.Getenv("CONFIG_FILENAME")
+	if configName == "" {
+		configName = "config"
+	}
+
+	viper.SetConfigName(configName) // name of config file (without extension)
 	viper.AddConfigPath(".")        // optionally look for config in the working directory
 	viper.AddConfigPath("./config") // optionally look for config in the working directory
 	err = viper.ReadInConfig()      // Find and read the config file
