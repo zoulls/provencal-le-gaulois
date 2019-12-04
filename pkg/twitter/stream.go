@@ -42,7 +42,6 @@ func StreamTweets(discord *discordgo.Session) {
 				if err != nil {
 					logger.Log.Printf("Error during send message of tweet : %v \n", tweet)
 				}
-
 			}
 		default:
 			logger.Log.Printf("unknown type(%T) : %v \n", tweet, tweet)
