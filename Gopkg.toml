@@ -48,4 +48,3 @@
 [metadata.heroku]
   root-package = "github.com/zoulls/provencal-le-gaulois"
   go-version = "1.11.1"
-  ensure = "false"
