@@ -15,7 +15,8 @@
         ]
     },
     "statusUpdate": {
-        "enabled": false,
+        "date": "2020-01-09 00:00 UTC",
+        "enabled": true,
         "every": 5
     }
 }

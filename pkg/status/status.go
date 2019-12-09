@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/hako/durafmt"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 )
@@ -12,29 +13,27 @@ import (
 const (
 	// See http://golang.org/pkg/time/#Parse
 	timeFormat = "2006-01-02 15:04 MST"
-	shDate     = "2019-06-28 09:00 UTC"
 )
 
 var lastSync = time.Now()
 
 func Update(s *discordgo.Session, force bool) error {
 	conf := config.GetConfig()
+	status := conf.Status
 
 	// Avoid to many update
 	if !force && !moreThan(conf.StatusUpdate.Every) {
 		return nil
 	}
 
-	deadline, err := time.Parse(timeFormat, shDate)
+	deadline, err := time.Parse(timeFormat, conf.StatusUpdate.Date)
 	if err != nil {
 		return err
 	}
-	diff := time.Until(deadline)
+	timeDuration := time.Until(deadline)
 
-	status := "Shadowbringers !"
-	if diff.Seconds() > float64(0) {
-		out := time.Time{}.Add(diff)
-		status = fmt.Sprintf("attendre %s pour Shadowbringers", out.Format("15h 04m"))
+	if timeDuration.Seconds() > float64(0) {
+		status = fmt.Sprintf("attendre %s avant MHW Iceborne !", durafmt.ParseShort(timeDuration).String())
 	}
 
 	lastSync = time.Now()

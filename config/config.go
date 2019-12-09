@@ -45,6 +45,7 @@ type TwitterConfig struct {
 }
 
 type StatusUpdate struct {
+	Date string
 	Enabled bool
 	Every   float64
 }
