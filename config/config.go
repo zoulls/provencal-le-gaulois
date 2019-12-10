@@ -7,7 +7,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 )
 
 // BOT
@@ -18,6 +17,7 @@ type Config struct {
 	PrefixCmd    string
 	Twitter      *Twitter
 	StatusUpdate *StatusUpdate
+	Logger *Logger
 }
 
 type AuthConfig struct {
@@ -46,8 +46,13 @@ type TwitterConfig struct {
 
 type StatusUpdate struct {
 	Date string
+	NbUnits int
 	Enabled bool
 	Every   float64
+}
+
+type Logger struct {
+	Level string
 }
 
 var config *Config
@@ -111,6 +116,5 @@ func GetConfig() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
-	logger.Log.Printf("Env: %s\n", os.Getenv("BOT_ENV"))
 	return conf
 }

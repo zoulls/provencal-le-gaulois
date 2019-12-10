@@ -1,25 +1,27 @@
 package logger
 
 import (
-	"flag"
-	"log"
 	"os"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/zoulls/provencal-le-gaulois/config"
 )
 
-var (
-	Log *log.Logger
-)
+var Log = logrus.New()
 
 func init() {
-	// set location of log file
-	var logpath = "./info.log"
+	// Log as JSON instead of the default ASCII formatter.
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 
-	flag.Parse()
-	var file, err1 = os.Create(logpath)
+	// Output to stdout instead of the default stderr
+	logrus.SetOutput(os.Stdout)
 
-	if err1 != nil {
-		panic(err1)
+	conf := config.GetConfig()
+	lvl, err := logrus.ParseLevel(conf.Logger.Level)
+	if err != nil {
+		panic(err)
 	}
-	Log = log.New(file, "", log.LstdFlags|log.Lshortfile)
-	Log.Println("LogFile : " + logpath)
+
+	logrus.SetLevel(lvl)
 }

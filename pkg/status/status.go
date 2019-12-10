@@ -5,17 +5,25 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/hako/durafmt"
+	"github.com/maritimusj/durafmt"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 )
 
-const (
-	// See http://golang.org/pkg/time/#Parse
-	timeFormat = "2006-01-02 15:04 MST"
-)
+// See http://golang.org/pkg/time/#Parse
+const timeFormat = "2006-01-02 15:04 EDT"
 
 var lastSync = time.Now()
+var units = map[string]string{
+	"years": "années",
+	"weeks": "semaines",
+	"days": "jours",
+	"hours": "heures",
+	"minutes": "minutes",
+	"seconds": "secondes",
+	"milliseconds": "millisecondes",
+	"microseconds": "microsecondes",
+}
 
 func Update(s *discordgo.Session, force bool) error {
 	conf := config.GetConfig()
@@ -33,7 +41,11 @@ func Update(s *discordgo.Session, force bool) error {
 	timeDuration := time.Until(deadline)
 
 	if timeDuration.Seconds() > float64(0) {
-		status = fmt.Sprintf("attendre %s avant MHW Iceborne !", durafmt.ParseShort(timeDuration).String())
+		initUnits()
+		status = fmt.Sprintf(
+			"attendre %s avant MHW Iceborne !",
+			durafmt.Parse(timeDuration).LimitFirstN(conf.StatusUpdate.NbUnits),
+		)
 	}
 
 	lastSync = time.Now()
@@ -49,4 +61,10 @@ func GetLastSync() string {
 func moreThan(min float64) bool {
 	diff := time.Since(lastSync)
 	return diff.Minutes() > min
+}
+
+func initUnits() {
+	for u, a := range units {
+		durafmt.SetAlias(u, a)
+	}
 }

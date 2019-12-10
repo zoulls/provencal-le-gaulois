@@ -32,7 +32,7 @@ func StreamTweets(discord *discordgo.Session) {
 		if conf.StatusUpdate.Enabled {
 			err := status.Update(discord, false)
 			if err != nil {
-				logger.Log.Printf("Error attempting to set my status, %v\n", err)
+				logger.Log.Errorf("Error attempting to set my status, %v\n", err)
 			}
 		}
 		switch tweet := t.(type) {
@@ -40,11 +40,11 @@ func StreamTweets(discord *discordgo.Session) {
 			if originalTweet(tweet) {
 				err := createMessage(discord, &tweet)
 				if err != nil {
-					logger.Log.Printf("Error during send message of tweet : %v \n", tweet)
+					logger.Log.Errorf("Error during send message of tweet : %v \n", tweet)
 				}
 			}
 		default:
-			logger.Log.Printf("unknown type(%T) : %v \n", tweet, tweet)
+			logger.Log.Debugf("unknown type(%T) : %v \n", tweet, tweet)
 		}
 	}
 }

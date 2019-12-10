@@ -15,8 +15,12 @@
         ]
     },
     "statusUpdate": {
-        "date": "2020-01-09 00:00 UTC",
-        "enabled": true,
+        "date": "2020-01-09 00:00 EDT",
+        "nbUnits": 3,
+        "enabled": false,
         "every": 5
+    },
+    "logger": {
+        "level": "debug"
     }
 }

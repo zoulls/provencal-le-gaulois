@@ -26,12 +26,12 @@
   revision = "53511d3c733003985b0b76f733df1f4d0095ee6a"
 
 [[projects]]
-  digest = "1:4fd5ce7844c22e194005b9e12fee8adc70fb5ba0bbba9e1964d2e3d1f301d789"
+  digest = "1:96f478a72f3392c19866f0da48241079e55dda3dffd917dbc60032fb7cd2eafa"
   name = "github.com/bwmarrin/discordgo"
   packages = ["."]
   pruneopts = "UT"
-  revision = "4a33b9bc7c56cfdb9bb244e33e83cb3941fe2bdc"
-  version = "v0.18.0"
+  revision = "dd99dea7adba674baa401e52362d6e330b50acf8"
+  version = "v0.20.1"
 
 [[projects]]
   branch = "master"
@@ -74,14 +74,6 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:09970bb8daf100bdf11b48b72c71ef980cd2b50efbd903989b3d182956be0b83"
-  name = "github.com/hako/durafmt"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "7b7ae1e72eade09dbc9c2cfba3e6c4bae7b8bcac"
-  version = "1.0.0"
-
-[[projects]]
   digest = "1:c0d19ab64b32ce9fe5cf4ddceba78d5bc9807f0016db6b1183599da3dcc24d10"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -109,12 +101,28 @@
   version = "v1.3.0"
 
 [[projects]]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:c568d7727aa262c32bdf8a3f7db83614f7af0ed661474b24588de635c20024c7"
   name = "github.com/magiconair/properties"
   packages = ["."]
   pruneopts = "UT"
   revision = "c2353362d570a7bfa228149c62842019201cfb71"
   version = "v1.8.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e42e48e0990d8946ecb4c141182d7af313d265d6442555a5d2e0f3e085362a99"
+  name = "github.com/maritimusj/durafmt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f1943f9a86cc2dd01086ffb54b358c5aa268c799"
 
 [[projects]]
   digest = "1:53bc4cd4914cd7cd52139990d5170d6dc99067ae31c56530621b18b35fc30318"
@@ -131,6 +139,14 @@
   pruneopts = "UT"
   revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:6a4a11ba764a56d2758899ec6f3848d24698d48442ebce85ee7a3f63284526cd"
@@ -233,8 +249,9 @@
   input-imports = [
     "github.com/ChimeraCoder/anaconda",
     "github.com/bwmarrin/discordgo",
-    "github.com/hako/durafmt",
     "github.com/joho/godotenv",
+    "github.com/maritimusj/durafmt",
+    "github.com/sirupsen/logrus",
     "github.com/spf13/viper",
   ]
   solver-name = "gps-cdcl"
