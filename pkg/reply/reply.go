@@ -34,7 +34,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 		case config.PrefixCmd + "updateStatus":
 			err = status.Update(s, true)
 			if err != nil {
-				logger.Log.Printf("Error attempting to set my status, %v\n", err)
+				logger.Log.Errorf("Error attempting to set my status, %v\n", err)
 				reply.Content = "Error during the update status"
 			} else {
 				reply.Content = "Status updated successfully !"

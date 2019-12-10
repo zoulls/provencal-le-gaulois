@@ -1,7 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/bwmarrin/discordgo"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
@@ -13,8 +16,10 @@ var (
 )
 
 func main() {
-	config := config.GetConfig()
-	discord, err := discordgo.New("Bot " + config.Auth.Secret)
+	logger.Log.Infof("Env: %s\n", os.Getenv("BOT_ENV"))
+
+	conf := config.GetConfig()
+	discord, err := discordgo.New("Bot " + conf.Auth.Secret)
 	errCheck("error creating discord session", err)
 	user, err := discord.User("@me")
 	errCheck("error retrieving account", err)
@@ -22,12 +27,12 @@ func main() {
 	botID = user.ID
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, config.Status)
+		err = discord.UpdateStatus(0, conf.Status)
 		if err != nil {
-			logger.Log.Printf("Error attempting to set my status\n")
+			logger.Log.Errorf("Error attempting to set my status\n")
 		}
 		servers := discord.State.Guilds
-		logger.Log.Printf("%s has started on %d servers\n", config.Name, len(servers))
+		logger.Log.Infof("%s has started on %d servers\n", conf.Name, len(servers))
 	})
 
 	err = discord.Open()
@@ -37,12 +42,12 @@ func main() {
 	twitter.StreamTweets(discord)
 
 	<-make(chan struct{})
-	logger.Log.Printf("%s stop to %s\n", config.Name, config.Status)
+	logger.Log.Errorf("%s stop to %s\n", conf.Name, conf.Status)
 }
 
 func errCheck(msg string, err error) {
 	if err != nil {
-		logger.Log.Printf("%s: %+v\n", msg, err)
+		logger.Log.Errorf("%s: %+v\n", msg, err)
 		panic(err)
 	}
 }
@@ -58,7 +63,7 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	res, err := reply.GetReply(s, m)
 	if err != nil {
-		logger.Log.Printf("Message send error: %+v\n", err)
+		logger.Log.Errorf("Message send error: %+v\n", err)
 	}
 	if res != nil {
 		_, err = s.ChannelMessageSendComplex(m.ChannelID, res)
