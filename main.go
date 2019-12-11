@@ -16,7 +16,7 @@ var (
 )
 
 func main() {
-	logger.Log.Infof("Env: %s\n", os.Getenv("BOT_ENV"))
+	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
 
 	conf := config.GetConfig()
 	discord, err := discordgo.New("Bot " + conf.Auth.Secret)
@@ -29,10 +29,10 @@ func main() {
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
 		err = discord.UpdateStatus(0, conf.Status)
 		if err != nil {
-			logger.Log.Errorf("Error attempting to set my status\n")
+			logger.Log.Errorf("Error attempting to set my status")
 		}
 		servers := discord.State.Guilds
-		logger.Log.Infof("%s has started on %d servers\n", conf.Name, len(servers))
+		logger.Log.Infof("%s has started on %d servers", conf.Name, len(servers))
 	})
 
 	err = discord.Open()
@@ -42,12 +42,12 @@ func main() {
 	twitter.StreamTweets(discord)
 
 	<-make(chan struct{})
-	logger.Log.Errorf("%s stop to %s\n", conf.Name, conf.Status)
+	logger.Log.Errorf("%s stop to %s", conf.Name, conf.Status)
 }
 
 func errCheck(msg string, err error) {
 	if err != nil {
-		logger.Log.Errorf("%s: %+v\n", msg, err)
+		logger.Log.Errorf("%s: %+v", msg, err)
 		panic(err)
 	}
 }
@@ -63,7 +63,7 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	res, err := reply.GetReply(s, m)
 	if err != nil {
-		logger.Log.Errorf("Message send error: %+v\n", err)
+		logger.Log.Errorf("Message send error: %+v", err)
 	}
 	if res != nil {
 		_, err = s.ChannelMessageSendComplex(m.ChannelID, res)
