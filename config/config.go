@@ -116,5 +116,17 @@ func GetConfig() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
+	statusUpdate := os.Getenv("STATUS_UPDATE_ENABLE")
+	if statusUpdate != "" {
+		switch statusUpdate {
+		case "true":
+			conf.StatusUpdate.Enabled = true
+		case "false":
+			conf.StatusUpdate.Enabled = false
+		default:
+			conf.StatusUpdate.Enabled = false
+		}
+	}
+
 	return conf
 }
