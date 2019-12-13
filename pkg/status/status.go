@@ -11,7 +11,8 @@ import (
 )
 
 // See http://golang.org/pkg/time/#Parse
-const timeFormat = "2006-01-02 15:04 EDT"
+// Time is in UTC
+const timeFormat = "2006-01-02 15:04"
 
 var lastSync = time.Now()
 var units = map[string]string{
