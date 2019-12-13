@@ -78,6 +78,11 @@ func GetConfig() *Config {
 	viper.SetConfigName(configName) // name of config file (without extension)
 	viper.AddConfigPath(".")        // optionally look for config in the working directory
 	viper.AddConfigPath("./config") // optionally look for config in the working directory
+
+	viper.SetEnvPrefix("plg")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	err = viper.ReadInConfig()      // Find and read the config file
 	if err != nil {                 // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file, %v\n", err))
@@ -114,18 +119,6 @@ func GetConfig() *Config {
 		AccessTokenSecret: os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 		ConsumerKey:       os.Getenv("TWITTER_CONSUMER_KEY"),
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
-	}
-
-	statusUpdate := os.Getenv("STATUS_UPDATE_ENABLE")
-	if statusUpdate != "" {
-		switch statusUpdate {
-		case "true":
-			conf.StatusUpdate.Enabled = true
-		case "false":
-			conf.StatusUpdate.Enabled = false
-		default:
-			conf.StatusUpdate.Enabled = false
-		}
 	}
 
 	return conf
