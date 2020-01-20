@@ -16,12 +16,12 @@ const timeFormat = "2006-01-02 15:04"
 
 var lastSync = time.Now()
 var units = map[string]string{
-	"years": "années",
-	"weeks": "semaines",
-	"days": "jours",
-	"hours": "heures",
-	"minutes": "minutes",
-	"seconds": "secondes",
+	"years":        "années",
+	"weeks":        "semaines",
+	"days":         "jours",
+	"hours":        "heures",
+	"minutes":      "minutes",
+	"seconds":      "secondes",
 	"milliseconds": "millisecondes",
 	"microseconds": "microsecondes",
 }
@@ -44,8 +44,9 @@ func Update(s *discordgo.Session, force bool) error {
 	if timeDuration.Seconds() > float64(0) {
 		initUnits()
 		status = fmt.Sprintf(
-			"attendre %s avant MHW Iceborne !",
+			"attendre %s avant %s",
 			durafmt.Parse(timeDuration).LimitFirstN(conf.StatusUpdate.NbUnits),
+			conf.StatusUpdate.Game,
 		)
 	}
 

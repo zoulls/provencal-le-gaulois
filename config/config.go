@@ -17,7 +17,7 @@ type Config struct {
 	PrefixCmd    string
 	Twitter      *Twitter
 	StatusUpdate *StatusUpdate
-	Logger *Logger
+	Logger       *Logger
 }
 
 type AuthConfig struct {
@@ -45,10 +45,11 @@ type TwitterConfig struct {
 }
 
 type StatusUpdate struct {
-	Date string
+	Date    string
 	NbUnits int
 	Enabled bool
 	Every   float64
+	Game    string
 }
 
 type Logger struct {
