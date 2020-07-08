@@ -11,6 +11,7 @@ import (
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
 var (
@@ -46,7 +47,7 @@ func main() {
 
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, *defaultStatus)
+		err = discord.UpdateStatus(0, utils.StringValue(defaultStatus))
 		if err != nil {
 			logger.Log.Errorf("Error attempting to set my status")
 		}
@@ -58,7 +59,7 @@ func main() {
 	errCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
-	twitter.StreamTweets(discord)
+	twitter.StreamTweets(discord, sClient)
 
 	<-make(chan struct{})
 	logger.Log.Errorf("%s stop to %s", conf.Name, conf.Status)

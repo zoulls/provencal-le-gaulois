@@ -20,7 +20,7 @@ func getAPI() *anaconda.TwitterApi {
 	return anaconda.NewTwitterApi(conf.Twitter.Config.AccessToken, conf.Twitter.Config.AccessTokenSecret)
 }
 
-func StreamTweets(discord *discordgo.Session) {
+func StreamTweets(discord *discordgo.Session, sClient *status.Status) {
 	conf := config.GetConfig()
 	api := getAPI()
 	v := url.Values{}
@@ -30,7 +30,7 @@ func StreamTweets(discord *discordgo.Session) {
 
 	for t := range s.C {
 		if conf.StatusUpdate.Enabled {
-			err := status.Update(discord, false)
+			err := sClient.Update(discord, false)
 			if err != nil {
 				logger.Log.Errorf("Error attempting to set my status, %v", err)
 			}

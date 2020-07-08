@@ -1,31 +1,16 @@
 package status
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/maritimusj/durafmt"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
-// See http://golang.org/pkg/time/#Parse
-// Time is in UTC
-const timeFormat = "2006-01-02 15:04"
-
 var lastSync = time.Now()
-var units = map[string]string{
-	"years":        "années",
-	"weeks":        "semaines",
-	"days":         "jours",
-	"hours":        "heures",
-	"minutes":      "minutes",
-	"seconds":      "secondes",
-	"milliseconds": "millisecondes",
-	"microseconds": "microsecondes",
-}
 
 type Status struct {
 	config  *config.Config
@@ -50,47 +35,31 @@ func (s *Status) GetDefault() (*string, error) {
 	return &s.config.Status, err
 }
 
-func Update(s *discordgo.Session, force bool) error {
+func (s *Status) Update(d *discordgo.Session, force bool) error {
+	var status *string
+	var err error
+
 	conf := config.GetConfig()
-	status := conf.Status
 
-	// Avoid to many update
-	if !force && !moreThan(conf.StatusUpdate.Every) {
-		return nil
+	if conf.StatusUpdate.Enabled {
+		status, err = generateCountdown(force)
+		if err != nil {
+			return err
+		}
 	}
 
-	deadline, err := time.Parse(timeFormat, conf.StatusUpdate.Date)
-	if err != nil {
-		return err
-	}
-	timeDuration := time.Until(deadline)
-
-	if timeDuration.Seconds() > float64(0) {
-		initUnits()
-		status = fmt.Sprintf(
-			"attendre %s avant %s",
-			durafmt.Parse(timeDuration).LimitFirstN(conf.StatusUpdate.NbUnits),
-			conf.StatusUpdate.Game,
-		)
+	if status == nil {
+		status, err = s.rClient.GetDefaultStatus()
+		if err != nil {
+			return err
+		}
 	}
 
 	lastSync = time.Now()
 
-	return s.UpdateStatus(0, status)
+	return d.UpdateStatus(0, utils.StringValue(status))
 }
 
 func GetLastSync() string {
 	return lastSync.String()
-}
-
-// Return if the last sync is older than the min in minutes
-func moreThan(min float64) bool {
-	diff := time.Since(lastSync)
-	return diff.Minutes() > min
-}
-
-func initUnits() {
-	for u, a := range units {
-		durafmt.SetAlias(u, a)
-	}
 }

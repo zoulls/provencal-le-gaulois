@@ -30,6 +30,8 @@ type AuthConfig struct {
 type RedisConfig struct {
 	Host string
 	Port string
+	User string
+	Pass string
 	Pool int64
 }
 
@@ -131,11 +133,12 @@ func GetConfig() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
-	redisPool, err := strconv.ParseInt(os.Getenv("REDIS_PORT"), 10, 64)
+	redisPool, err := strconv.ParseInt(os.Getenv("REDIS_POOL"), 10, 64)
 	if err != nil {
 		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
 	}
 	conf.Redis = &RedisConfig{
+		// TODO check for auto populate and for user/pass
 		Host: os.Getenv("REDIS_HOST"),
 		Port: os.Getenv("REDIS_PORT"),
 		Pool: redisPool,

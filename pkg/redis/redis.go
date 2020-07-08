@@ -18,20 +18,21 @@ type client struct {
 }
 
 func NewClient() (Client, error) {
-	config := config.GetConfig()
-	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", config.Redis.Host, config.Redis.Port), int(config.Redis.Pool))
+	conf := config.GetConfig()
+	// TODO add user/pass
+	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", conf.Redis.Host, conf.Redis.Port), int(conf.Redis.Pool))
 	client := &client{
-		config: config,
+		config: conf,
 		Pool:   pool,
 	}
 	return client, err
 }
 
 func (c *client) GetDefaultStatus() (*string, error) {
-	var status *string
-	err := c.Do(radix.Cmd(status, "GET", "default_status"))
+	var status string
+	err := c.Do(radix.Cmd(&status, "GET", "default_status"))
 	if err != nil {
 		return nil, err
 	}
-	return status, err
+	return &status, err
 }
