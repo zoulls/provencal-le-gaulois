@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
@@ -16,9 +18,10 @@ var (
 )
 
 func main() {
-	// Config
-	config := config.GetConfig()
+	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
 
+	// Config
+	conf := config.GetConfig()
 	// Redis client
 	rClient, err := redis.NewClient()
 	if err != nil {
@@ -27,15 +30,15 @@ func main() {
 	}
 
 	// Discord client
-	discord, err := discordgo.New("Bot " + config.Auth.Secret)
+	discord, err := discordgo.New("Bot " + conf.Auth.Secret)
 	errCheck("error creating discord session", err)
 	user, err := discord.User("@me")
 	errCheck("error retrieving account", err)
 	botID = user.ID
 
 	// Get default status
-	sClient := status.New(config, rClient)
-	status, err := sClient.GetDefault()
+	sClient := status.New(conf, rClient)
+	defaultStatus, err := sClient.GetDefault()
 	if err != nil {
 		logger.Log.Print("Error during status init\n")
 		panic(err)
@@ -43,12 +46,12 @@ func main() {
 
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, *status)
+		err = discord.UpdateStatus(0, *defaultStatus)
 		if err != nil {
-			logger.Log.Printf("Error attempting to set my status\n")
+			logger.Log.Errorf("Error attempting to set my status")
 		}
 		servers := discord.State.Guilds
-		logger.Log.Printf("%s has started on %d servers\n", config.Name, len(servers))
+		logger.Log.Infof("%s has started on %d servers", conf.Name, len(servers))
 	})
 
 	err = discord.Open()
@@ -58,12 +61,12 @@ func main() {
 	twitter.StreamTweets(discord)
 
 	<-make(chan struct{})
-	logger.Log.Printf("%s stop to %s\n", config.Name, config.Status)
+	logger.Log.Errorf("%s stop to %s", conf.Name, conf.Status)
 }
 
 func errCheck(msg string, err error) {
 	if err != nil {
-		logger.Log.Printf("%s: %+v\n", msg, err)
+		logger.Log.Errorf("%s: %+v", msg, err)
 		panic(err)
 	}
 }
@@ -79,7 +82,7 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	res, err := reply.GetReply(s, m)
 	if err != nil {
-		logger.Log.Printf("Message send error: %+v\n", err)
+		logger.Log.Errorf("Message send error: %+v", err)
 	}
 	if res != nil {
 		_, err = s.ChannelMessageSendComplex(m.ChannelID, res)

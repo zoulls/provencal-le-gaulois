@@ -26,29 +26,25 @@ func StreamTweets(discord *discordgo.Session) {
 	v := url.Values{}
 	v.Set("follow", conf.Twitter.FollowIDstring)
 	s := api.PublicStreamFilter(v)
-	// DEBUG
-	// s := api.PublicStreamSample(nil)
 	defer api.Close()
 
 	for t := range s.C {
+		if conf.StatusUpdate.Enabled {
+			err := status.Update(discord, false)
+			if err != nil {
+				logger.Log.Errorf("Error attempting to set my status, %v", err)
+			}
+		}
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
-			// DEBUG
-			// fmt.Printf("%-15s: %s\n", tweet.User.ScreenName, tweet.Text)
 			if originalTweet(tweet) {
 				err := createMessage(discord, &tweet)
 				if err != nil {
-					logger.Log.Printf("Error during send message of tweet : %v \n", tweet)
-				}
-				if conf.StatusUpdate {
-					err = status.Update(discord)
-					if err != nil {
-						logger.Log.Printf("Error attempting to set my status, %v\n", err)
-					}
+					logger.Log.Errorf("Error during send message of tweet : %v", tweet)
 				}
 			}
 		default:
-			logger.Log.Printf("unknown type(%T) : %v \n", tweet, tweet)
+			logger.Log.Debugf("unknown type(%T) : %v", tweet, tweet)
 		}
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 )
 
 // BOT
@@ -20,7 +19,8 @@ type Config struct {
 	Status       string
 	PrefixCmd    string
 	Twitter      *Twitter
-	StatusUpdate bool
+	StatusUpdate *StatusUpdate
+	Logger       *Logger
 }
 
 type AuthConfig struct {
@@ -53,6 +53,18 @@ type TwitterConfig struct {
 	ConsumerSecret    string
 }
 
+type StatusUpdate struct {
+	Date    string
+	NbUnits int
+	Enabled bool
+	Every   float64
+	Game    string
+}
+
+type Logger struct {
+	Level string
+}
+
 var config *Config
 
 func init() {
@@ -68,18 +80,30 @@ func GetConfig() *Config {
 		return config
 	}
 
-	viper.SetConfigName("config")   // name of config file (without extension)
+	configName := os.Getenv("CONFIG_FILENAME")
+	if configName == "" {
+		configName = "config"
+	}
+
+	viper.SetConfigName(configName) // name of config file (without extension)
 	viper.AddConfigPath(".")        // optionally look for config in the working directory
 	viper.AddConfigPath("./config") // optionally look for config in the working directory
+
+	viper.SetEnvPrefix("plg")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	err = viper.ReadInConfig()      // Find and read the config file
 	if err != nil {                 // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file, %v\n", err))
 	}
 
-	// Load .env var
-	err = godotenv.Load()
-	if err != nil {
-		panic(fmt.Errorf("Error loading .env file, %v\n", err))
+	if _, err := os.Stat(".env"); err == nil {
+		// Load .env var
+		err = godotenv.Load()
+		if err != nil {
+			panic(fmt.Errorf("Error loading .env file, %v\n", err))
+		}
 	}
 
 	conf := &Config{}
@@ -117,7 +141,6 @@ func GetConfig() *Config {
 		Pool: redisPool,
 	}
 
-	logger.Log.Printf("Env: %s\n", os.Getenv("BOT_ENV"))
 	return conf
 }
 

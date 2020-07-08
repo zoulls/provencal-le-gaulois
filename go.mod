@@ -1,6 +1,7 @@
 module github.com/zoulls/provencal-le-gaulois
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/ChimeraCoder/anaconda v2.0.0+incompatible
 	github.com/ChimeraCoder/tokenbucket v0.0.0-20131201223612-c5a927568de7 // indirect
 	github.com/azr/backoff v0.0.0-20160115115103-53511d3c7330 // indirect
@@ -11,14 +12,17 @@ require (
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/magiconair/properties v1.8.1 // indirect
-	github.com/mediocregopher/mediocre-go-lib v0.0.0-20181029021733-cb65787f37ed // indirect
+	github.com/maritimusj/durafmt v0.0.0-20191209032412-f1943f9a86cc
 	github.com/mediocregopher/radix/v3 v3.3.2
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
 	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f // indirect
-	golang.org/x/sys v0.0.0-20181019160139-8e24a49d80f8 // indirect
 	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
+
+go 1.13
