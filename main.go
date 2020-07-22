@@ -23,6 +23,7 @@ func main() {
 
 	// Config
 	conf := config.GetConfig()
+
 	// Redis client
 	rClient, err := redis.NewClient()
 	if err != nil {

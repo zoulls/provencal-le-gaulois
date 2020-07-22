@@ -44,7 +44,9 @@ type Twitter struct {
 
 type TwitterFollow struct {
 	Name        string
-	List        []string
+	Key 		string
+	ListStr     string
+	List		[]string
 	DiscordChan string
 }
 
@@ -69,18 +71,10 @@ type Logger struct {
 
 var config *Config
 
-func init() {
-	config = GetConfig()
-}
-
 // Read the config file from the current directory and marshal
 // into the conf config struct.
-func GetConfig() *Config {
+func init() {
 	var err error
-
-	if config != nil {
-		return config
-	}
 
 	configName := os.Getenv("CONFIG_FILENAME")
 	if configName == "" {
@@ -122,7 +116,8 @@ func GetConfig() *Config {
 		if len(conf.Twitter.FollowIDstring) > 0 {
 			conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + ","
 		}
-		conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + strings.Join(follow.List, ",")
+		conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + follow.ListStr
+		follow.List = strings.Split(follow.ListStr, ",")
 		follow.DiscordChan = os.Getenv("DISCORD_CHANNEL_FOR_TWEET_" + follow.Name)
 	}
 
@@ -138,13 +133,17 @@ func GetConfig() *Config {
 		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
 	}
 	conf.Redis = &RedisConfig{
-		// TODO check for auto populate and for user/pass
 		Host: os.Getenv("REDIS_HOST"),
 		Port: os.Getenv("REDIS_PORT"),
+		User: os.Getenv("REDIS_USER"),
+		Pass: os.Getenv("REDIS_PASS"),
 		Pool: redisPool,
 	}
+}
 
-	return conf
+// Return current config
+func GetConfig() *Config {
+	return config
 }
 
 func (c *Config) SetID(id string) {

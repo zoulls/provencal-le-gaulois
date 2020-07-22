@@ -13,7 +13,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/maritimusj/durafmt v0.0.0-20191209032412-f1943f9a86cc
-	github.com/mediocregopher/radix/v3 v3.3.2
+	github.com/mediocregopher/radix/v3 v3.5.2
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/pflag v1.0.3 // indirect
