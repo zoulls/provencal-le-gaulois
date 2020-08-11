@@ -1,13 +1,11 @@
 package status
 
 import (
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 	"time"
-
-	"github.com/bwmarrin/discordgo"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
-	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
 var lastSync = time.Now()
@@ -35,29 +33,29 @@ func (s *Status) GetDefault() (*string, error) {
 	return &s.config.Status, err
 }
 
-func (s *Status) Update(d *discordgo.Session, force bool) error {
-	var status *string
+func (s *Status) Last(force bool) (string, error) {
 	var err error
 
 	conf := config.GetConfig()
 
+	// Init default status
+	status := utils.String(conf.Status)
+
 	if conf.StatusUpdate.Enabled {
 		status, err = generateCountdown(force)
 		if err != nil {
-			return err
+			return utils.StringValue(status), err
 		}
 	}
 
-	if status == nil {
-		status, err = s.rClient.GetDefaultStatus()
-		if err != nil {
-			return err
-		}
+
+	status, err = s.rClient.GetDefaultStatus()
+	if err != nil {
+		return utils.StringValue(status), err
 	}
 
 	lastSync = time.Now()
-
-	return d.UpdateStatus(0, utils.StringValue(status))
+	return utils.StringValue(status), err
 }
 
 func GetLastSync() string {

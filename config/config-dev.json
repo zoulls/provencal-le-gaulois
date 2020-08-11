@@ -6,10 +6,12 @@
         "twitterFollows": [
             {
                 "name": "GAME_NEWS",
+                "key": "twitterGameNews",
                 "list": ["1344755923"]
             },
             {
                 "name": "GAME_STORE",
+                "key": "twitterGameStore",
                 "list": ["2899773086"]
             }
         ]
@@ -18,8 +20,7 @@
         "date": "2020-01-09 05:00",
         "nbUnits": 3,
         "enabled": false,
-        "every": 5,
-        "game": ""
+        "every": 5
     },
     "logger": {
         "level": "debug"

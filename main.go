@@ -11,7 +11,6 @@ import (
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
-	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
 var (
@@ -19,16 +18,24 @@ var (
 )
 
 func main() {
-	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
-
-	// Config
+	// Init Config
 	conf := config.GetConfig()
+
+	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
 
 	// Redis client
 	rClient, err := redis.NewClient()
 	if err != nil {
 		logger.Log.Print("Error during Redis init\n")
 		panic(err)
+	}
+
+	// Sync Twitter follows list
+	tConf, err := twitter.SyncList(rClient, *conf.Twitter)
+	if err != nil {
+		logger.Log.Print("Error during Redis init\n")
+	} else {
+		conf = config.UpdateTwitter(tConf)
 	}
 
 	// Discord client
@@ -40,7 +47,7 @@ func main() {
 
 	// Get default status
 	sClient := status.New(conf, rClient)
-	defaultStatus, err := sClient.GetDefault()
+	defaultStatus, err := sClient.Last(true)
 	if err != nil {
 		logger.Log.Print("Error during status init\n")
 		panic(err)
@@ -48,7 +55,7 @@ func main() {
 
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, utils.StringValue(defaultStatus))
+		err = discord.UpdateStatus(0, defaultStatus)
 		if err != nil {
 			logger.Log.Errorf("Error attempting to set my status")
 		}

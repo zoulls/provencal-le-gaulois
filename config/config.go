@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -69,11 +70,14 @@ type Logger struct {
 	Level string
 }
 
+// Config singleton
 var config *Config
+// Check initialized exactly once
+var once sync.Once
 
 // Read the config file from the current directory and marshal
 // into the conf config struct.
-func init() {
+func firstInit() *Config {
 	var err error
 
 	configName := os.Getenv("CONFIG_FILENAME")
@@ -139,10 +143,20 @@ func init() {
 		Pass: os.Getenv("REDIS_PASS"),
 		Pool: redisPool,
 	}
+
+	return conf
 }
 
 // Return current config
 func GetConfig() *Config {
+	once.Do(func() {
+		config = firstInit()
+	})
+	return config
+}
+
+func UpdateTwitter(twitterCf Twitter) *Config {
+	config.Twitter = &twitterCf
 	return config
 }
 

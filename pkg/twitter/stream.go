@@ -30,9 +30,13 @@ func StreamTweets(discord *discordgo.Session, sClient *status.Status) {
 
 	for t := range s.C {
 		if conf.StatusUpdate.Enabled {
-			err := sClient.Update(discord, false)
+			lastStatus, err := sClient.Last(false)
 			if err != nil {
-				logger.Log.Errorf("Error attempting to set my status, %v", err)
+				logger.Log.Errorf("Error retrieving the last status, %v", err)
+			}
+			err = discord.UpdateStatus(0, lastStatus)
+			if err != nil {
+				logger.Log.Errorf("Error during status update, %v", err)
 			}
 		}
 		switch tweet := t.(type) {

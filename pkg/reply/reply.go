@@ -40,15 +40,23 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 				panic(err)
 			}
 			sClient := status.New(conf, rClient)
-			err = sClient.Update(s, true)
+			lastStatus, err := sClient.Last(true)
 			if err != nil {
-				logger.Log.Errorf("Error attempting to set my status, %v", err)
-				reply.Content = "Error during the update status"
+				logger.Log.Errorf("Error retrieving the last status, %v", err)
+				reply.Content = "Error retrieving the last status, use of default config"
+			}
+
+			err = s.UpdateStatus(0, lastStatus)
+			if err != nil {
+				logger.Log.Errorf("Error during status update, %v", err)
 			} else {
 				reply.Content = "Status updated successfully !"
 			}
+
 		case conf.PrefixCmd + "statusLastSync":
 			reply.Content = status.GetLastSync()
+		case conf.PrefixCmd + "twitterFollows":
+			reply.Content = conf.Twitter.FollowIDstring
 		default:
 			return nil, nil
 		}

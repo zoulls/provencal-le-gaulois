@@ -11,6 +11,7 @@ import (
 
 type Client interface {
 	GetDefaultStatus() (*string, error)
+	GetTwitterFollows(follow *config.TwitterFollow) (*string, error)
 }
 
 type client struct {
