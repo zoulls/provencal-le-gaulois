@@ -8,7 +8,7 @@ import (
 )
 
 func SyncList(rClient redis.Client, tConfig config.Twitter) (config.Twitter, error) {
-	var FollowIDstring string
+	var followIDstring string
 
 	for _, follow := range tConfig.TwitterFollows {
 		list, err := rClient.GetTwitterFollows(follow)
@@ -18,9 +18,12 @@ func SyncList(rClient redis.Client, tConfig config.Twitter) (config.Twitter, err
 		listStr := utils.StringValue(list)
 		follow.ListStr = listStr
 		follow.List = strings.Split(listStr, ",")
-		FollowIDstring =  FollowIDstring + listStr
+		if len(followIDstring) > 0 {
+			followIDstring = followIDstring + ","
+		}
+		followIDstring =  followIDstring + listStr
 	}
-	tConfig.FollowIDstring = FollowIDstring
+	tConfig.FollowIDstring = followIDstring
 
 	return tConfig, nil
 }
