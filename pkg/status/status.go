@@ -1,72 +1,63 @@
 package status
 
 import (
-	"fmt"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/maritimusj/durafmt"
-
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 )
 
-// See http://golang.org/pkg/time/#Parse
-// Time is in UTC
-const timeFormat = "2006-01-02 15:04"
-
 var lastSync = time.Now()
-var units = map[string]string{
-	"years":        "années",
-	"weeks":        "semaines",
-	"days":         "jours",
-	"hours":        "heures",
-	"minutes":      "minutes",
-	"seconds":      "secondes",
-	"milliseconds": "millisecondes",
-	"microseconds": "microsecondes",
+
+type Status struct {
+	config  *config.Config
+	rClient redis.Client
 }
 
-func Update(s *discordgo.Session, force bool) error {
-	conf := config.GetConfig()
-	status := conf.Status
-
-	// Avoid to many update
-	if !force && !moreThan(conf.StatusUpdate.Every) {
-		return nil
+func New(config *config.Config, rClient redis.Client) *Status {
+	return &Status{
+		config:  config,
+		rClient: rClient,
 	}
+}
 
-	deadline, err := time.Parse(timeFormat, conf.StatusUpdate.Date)
+func (s *Status) GetDefault() (*string, error) {
+	status, err := s.rClient.GetDefaultStatus()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	timeDuration := time.Until(deadline)
+	if status != nil {
+		return status, err
+	}
+	return &s.config.Status, err
+}
 
-	if timeDuration.Seconds() > float64(0) {
-		initUnits()
-		status = fmt.Sprintf(
-			"attendre %s avant %s",
-			durafmt.Parse(timeDuration).LimitFirstN(conf.StatusUpdate.NbUnits),
-			conf.StatusUpdate.Game,
-		)
+func (s *Status) Last(force bool) (string, error) {
+	var err error
+
+	conf := config.GetConfig()
+
+	// Init default status
+	status := utils.String(conf.Status)
+
+	if conf.StatusUpdate.Enabled {
+		status, err = generateCountdown(force)
+		if err != nil {
+			return utils.StringValue(status), err
+		}
+	}
+
+
+	status, err = s.rClient.GetDefaultStatus()
+	if err != nil {
+		return utils.StringValue(status), err
 	}
 
 	lastSync = time.Now()
-
-	return s.UpdateStatus(0, status)
+	return utils.StringValue(status), err
 }
 
 func GetLastSync() string {
 	return lastSync.String()
-}
-
-// Return if the last sync is older than the min in minutes
-func moreThan(min float64) bool {
-	diff := time.Since(lastSync)
-	return diff.Minutes() > min
-}
-
-func initUnits() {
-	for u, a := range units {
-		durafmt.SetAlias(u, a)
-	}
 }

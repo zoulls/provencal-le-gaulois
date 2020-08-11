@@ -2,6 +2,7 @@ package reply
 
 import (
 	"encoding/json"
+	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -13,34 +14,49 @@ import (
 func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.MessageSend, error) {
 	var err error
 
-	config := config.GetConfig()
+	conf := config.GetConfig()
 	reply := &discordgo.MessageSend{}
 
-	if strings.HasPrefix(m.Content, config.PrefixCmd+"embed ") {
+	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
 			err = s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
 		}
 	} else {
 		switch m.Content {
-		case config.PrefixCmd + "ping":
+		case conf.PrefixCmd + "ping":
 			reply.Content = "Pong! :ping_pong:"
-		case config.PrefixCmd + "pong":
+		case conf.PrefixCmd + "pong":
 			reply.Content = "Ping! :ping_pong: petit malin! :laughing:"
-		case config.PrefixCmd + "help":
+		case conf.PrefixCmd + "help":
 			reply.Embed = help()
-		case config.PrefixCmd + "embedGen":
+		case conf.PrefixCmd + "embedGen":
 			reply.Embed = embedGenerator()
-		case config.PrefixCmd + "updateStatus":
-			err = status.Update(s, true)
+		case conf.PrefixCmd + "updateStatus":
+			// Redis client
+			rClient, err := redis.NewClient()
 			if err != nil {
-				logger.Log.Errorf("Error attempting to set my status, %v", err)
-				reply.Content = "Error during the update status"
+				logger.Log.Print("Error during Redis init\n")
+				panic(err)
+			}
+			sClient := status.New(conf, rClient)
+			lastStatus, err := sClient.Last(true)
+			if err != nil {
+				logger.Log.Errorf("Error retrieving the last status, %v", err)
+				reply.Content = "Error retrieving the last status, use of default config"
+			}
+
+			err = s.UpdateStatus(0, lastStatus)
+			if err != nil {
+				logger.Log.Errorf("Error during status update, %v", err)
 			} else {
 				reply.Content = "Status updated successfully !"
 			}
-		case config.PrefixCmd + "statusLastSync":
+
+		case conf.PrefixCmd + "statusLastSync":
 			reply.Content = status.GetLastSync()
+		case conf.PrefixCmd + "twitterFollows":
+			reply.Content = conf.Twitter.FollowIDstring
 		default:
 			return nil, nil
 		}

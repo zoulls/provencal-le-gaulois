@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -11,7 +13,9 @@ import (
 
 // BOT
 type Config struct {
+	ID           string
 	Auth         *AuthConfig
+	Redis        *RedisConfig
 	Name         string
 	Status       string
 	PrefixCmd    string
@@ -24,6 +28,14 @@ type AuthConfig struct {
 	Secret string
 }
 
+type RedisConfig struct {
+	Host string
+	Port string
+	User string
+	Pass string
+	Pool int64
+}
+
 // TWITTER
 type Twitter struct {
 	TwitterFollows []*TwitterFollow
@@ -33,7 +45,9 @@ type Twitter struct {
 
 type TwitterFollow struct {
 	Name        string
-	List        []string
+	Key 		string
+	ListStr     string
+	List		[]string
 	DiscordChan string
 }
 
@@ -56,20 +70,15 @@ type Logger struct {
 	Level string
 }
 
+// Config singleton
 var config *Config
-
-func init() {
-	config = GetConfig()
-}
+// Check initialized exactly once
+var once sync.Once
 
 // Read the config file from the current directory and marshal
 // into the conf config struct.
-func GetConfig() *Config {
+func firstInit() *Config {
 	var err error
-
-	if config != nil {
-		return config
-	}
 
 	configName := os.Getenv("CONFIG_FILENAME")
 	if configName == "" {
@@ -111,7 +120,8 @@ func GetConfig() *Config {
 		if len(conf.Twitter.FollowIDstring) > 0 {
 			conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + ","
 		}
-		conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + strings.Join(follow.List, ",")
+		conf.Twitter.FollowIDstring = conf.Twitter.FollowIDstring + follow.ListStr
+		follow.List = strings.Split(follow.ListStr, ",")
 		follow.DiscordChan = os.Getenv("DISCORD_CHANNEL_FOR_TWEET_" + follow.Name)
 	}
 
@@ -122,5 +132,34 @@ func GetConfig() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
+	redisPool, err := strconv.ParseInt(os.Getenv("REDIS_POOL"), 10, 64)
+	if err != nil {
+		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
+	}
+	conf.Redis = &RedisConfig{
+		Host: os.Getenv("REDIS_HOST"),
+		Port: os.Getenv("REDIS_PORT"),
+		User: os.Getenv("REDIS_USER"),
+		Pass: os.Getenv("REDIS_PASS"),
+		Pool: redisPool,
+	}
+
 	return conf
+}
+
+// Return current config
+func GetConfig() *Config {
+	once.Do(func() {
+		config = firstInit()
+	})
+	return config
+}
+
+func UpdateTwitter(twitterCf Twitter) *Config {
+	config.Twitter = &twitterCf
+	return config
+}
+
+func (c *Config) SetID(id string) {
+	c.ID = id
 }

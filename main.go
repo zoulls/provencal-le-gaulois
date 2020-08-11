@@ -7,7 +7,9 @@ import (
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
+	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
 )
 
@@ -16,18 +18,44 @@ var (
 )
 
 func main() {
+	// Init Config
+	conf := config.GetConfig()
+
 	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
 
-	conf := config.GetConfig()
+	// Redis client
+	rClient, err := redis.NewClient()
+	if err != nil {
+		logger.Log.Print("Error during Redis init\n")
+		panic(err)
+	}
+
+	// Sync Twitter follows list
+	tConf, err := twitter.SyncList(rClient, *conf.Twitter)
+	if err != nil {
+		logger.Log.Print("Error during Redis init\n")
+	} else {
+		conf = config.UpdateTwitter(tConf)
+	}
+
+	// Discord client
 	discord, err := discordgo.New("Bot " + conf.Auth.Secret)
 	errCheck("error creating discord session", err)
 	user, err := discord.User("@me")
 	errCheck("error retrieving account", err)
-
 	botID = user.ID
+
+	// Get default status
+	sClient := status.New(conf, rClient)
+	defaultStatus, err := sClient.Last(true)
+	if err != nil {
+		logger.Log.Print("Error during status init\n")
+		panic(err)
+	}
+
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, conf.Status)
+		err = discord.UpdateStatus(0, defaultStatus)
 		if err != nil {
 			logger.Log.Errorf("Error attempting to set my status")
 		}
@@ -39,7 +67,7 @@ func main() {
 	errCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
-	twitter.StreamTweets(discord)
+	twitter.StreamTweets(discord, sClient)
 
 	<-make(chan struct{})
 	logger.Log.Errorf("%s stop to %s", conf.Name, conf.Status)
