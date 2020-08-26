@@ -29,10 +29,7 @@ type AuthConfig struct {
 }
 
 type RedisConfig struct {
-	Host string
-	Port string
-	User string
-	Pass string
+	URL string
 	Pool int64
 }
 
@@ -137,10 +134,7 @@ func firstInit() *Config {
 		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
 	}
 	conf.Redis = &RedisConfig{
-		Host: os.Getenv("REDIS_HOST"),
-		Port: os.Getenv("REDIS_PORT"),
-		User: os.Getenv("REDIS_USER"),
-		Pass: os.Getenv("REDIS_PASS"),
+		URL: os.Getenv("REDIS_URL"),
 		Pool: redisPool,
 	}
 

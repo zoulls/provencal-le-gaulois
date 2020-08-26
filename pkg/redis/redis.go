@@ -1,7 +1,8 @@
 package redis
 
 import (
-	"fmt"
+	"errors"
+	"net/url"
 	"time"
 
 	radix "github.com/mediocregopher/radix/v3"
@@ -21,7 +22,7 @@ type client struct {
 
 func NewClient() (Client, error) {
 	conf := config.GetConfig()
-	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", conf.Redis.Host, conf.Redis.Port), int(conf.Redis.Pool), radix.PoolConnFunc(customConnFunc))
+	pool, err := radix.NewPool("tcp", conf.Redis.URL, int(conf.Redis.Pool), radix.PoolConnFunc(customConnFunc))
 	client := &client{
 		config: conf,
 		Pool:   pool,
@@ -31,11 +32,18 @@ func NewClient() (Client, error) {
 
 // Custom function with Auth connection
 func customConnFunc(network, addr string) (radix.Conn, error) {
-	conf := config.GetConfig()
-	return radix.Dial(network, addr,
-		radix.DialTimeout(30 * time.Second),
-		radix.DialAuthPass(conf.Redis.Pass),
-	)
+	u, err := url.Parse(addr)
+	if err != nil {
+		return nil, err
+	}
+	pass, exists := u.User.Password()
+	if exists {
+		return radix.Dial(network, addr,
+			radix.DialTimeout(30 * time.Second),
+			radix.DialAuthPass(pass),
+		)
+	}
+	return nil, errors.New("redis password not configured")
 }
 
 func (c *client) GetDefaultStatus() (*string, error) {
