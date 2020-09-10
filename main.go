@@ -26,14 +26,13 @@ func main() {
 	// Redis client
 	rClient, err := redis.NewClient()
 	if err != nil {
-		logger.Log.Print("Error during Redis init\n")
-		panic(err)
+		logger.Log.Errorf("Error during Redis init, %v", err)
 	}
 
 	// Sync Twitter follows list
 	tConf, err := twitter.SyncList(rClient, *conf.Twitter)
 	if err != nil {
-		logger.Log.Print("Error during Redis init\n")
+		logger.Log.Errorf("Error during Twitter sync list, %v", err)
 	} else {
 		conf = config.UpdateTwitter(tConf)
 	}
@@ -49,15 +48,14 @@ func main() {
 	sClient := status.New(conf, rClient)
 	defaultStatus, err := sClient.Last(true)
 	if err != nil {
-		logger.Log.Print("Error during status init\n")
-		panic(err)
+		logger.Log.Errorf("Error during status init, %v", err)
 	}
 
 	discord.AddHandler(commandHandler)
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
 		err = discord.UpdateStatus(0, defaultStatus)
 		if err != nil {
-			logger.Log.Errorf("Error attempting to set my status")
+			logger.Log.Errorf("Error attempting to set my status, %v", err)
 		}
 		servers := discord.State.Guilds
 		logger.Log.Infof("%s has started on %d servers", conf.Name, len(servers))
@@ -75,8 +73,7 @@ func main() {
 
 func errCheck(msg string, err error) {
 	if err != nil {
-		logger.Log.Errorf("%s: %+v", msg, err)
-		panic(err)
+		logger.Log.Errorf("%s: %v", msg, err)
 	}
 }
 
@@ -91,7 +88,7 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	res, err := reply.GetReply(s, m)
 	if err != nil {
-		logger.Log.Errorf("Message send error: %+v", err)
+		logger.Log.Errorf("Message send error: %v", err)
 	}
 	if res != nil {
 		_, err = s.ChannelMessageSendComplex(m.ChannelID, res)
