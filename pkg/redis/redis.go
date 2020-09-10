@@ -14,6 +14,7 @@ type Client interface {
 	GetDefaultStatus() (*string, error)
 	GetTwitterFollows(follow *config.TwitterFollow) (*string, error)
 	Ping() (*string, error)
+	Info() (*string, error)
 }
 
 type client struct {
@@ -75,4 +76,24 @@ func (c *client) Ping() (*string, error) {
 		return nil, err
 	}
 	return &ping, err
+}
+
+func (c *client) Info() (*string, error) {
+	var infoServ, infoCli, infoKeys string
+
+	err := c.Do(radix.Cmd(&infoServ, "INFO", "server"))
+	if err != nil {
+		return nil, err
+	}
+	err = c.Do(radix.Cmd(&infoCli, "INFO", "clients"))
+	if err != nil {
+		return nil, err
+	}
+	err = c.Do(radix.Cmd(&infoKeys, "INFO", "Keyspace"))
+	if err != nil {
+		return nil, err
+	}
+
+	info := infoServ+infoCli+infoKeys
+	return &info, err
 }
