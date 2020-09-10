@@ -44,11 +44,11 @@ func StreamTweets(discord *discordgo.Session, sClient *status.Status) {
 			if originalTweet(tweet) {
 				err := createMessage(discord, &tweet)
 				if err != nil {
-					logger.Log.Errorf("Error during send message of tweet : %v", tweet)
+					logger.Log.Errorf("Error during send message of tweet, %v", tweet)
 				}
 			}
 		default:
-			logger.Log.Debugf("unknown type(%T) : %v", tweet, tweet)
+			logger.Log.Debugf("unknown type(%T), %v", tweet, tweet)
 		}
 	}
 }
@@ -79,7 +79,7 @@ func getDiscordChanID(tf []*config.TwitterFollow, tweet *anaconda.Tweet) (string
 			return follow.DiscordChan, nil
 		}
 	}
-	return "", errors.New("Twitter ID unknow")
+	return "", errors.New("twitter ID unknown")
 }
 
 // Contains tells whether a contains x.

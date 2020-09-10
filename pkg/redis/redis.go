@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"errors"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"net/url"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 type Client interface {
 	GetDefaultStatus() (*string, error)
 	GetTwitterFollows(follow *config.TwitterFollow) (*string, error)
+	Ping() (*string, error)
 }
 
 type client struct {
@@ -43,7 +44,10 @@ func customConnFunc(network, addr string) (radix.Conn, error) {
 			radix.DialAuthPass(pass),
 		)
 	}
-	return nil, errors.New("redis password not configured")
+	logger.Log.Warn("redis password not configured")
+	return radix.Dial(network, addr,
+		radix.DialTimeout(30 * time.Second),
+	)
 }
 
 func (c *client) GetDefaultStatus() (*string, error) {
@@ -62,4 +66,13 @@ func (c *client) GetTwitterFollows(follow *config.TwitterFollow) (*string, error
 		return nil, err
 	}
 	return &list, err
+}
+
+func (c *client) Ping() (*string, error) {
+	var ping string
+	err := c.Do(radix.Cmd(&ping, "PING"))
+	if err != nil {
+		return nil, err
+	}
+	return &ping, err
 }
