@@ -61,6 +61,12 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 			reply.Content = status.GetLastSync()
 		case conf.PrefixCmd + "twitterFollows":
 			reply.Content = conf.Twitter.FollowIDstring
+		case conf.PrefixCmd + "redisInfo":
+			redisInfo, err := rClient.Info()
+			if err != nil {
+				logger.Log.Errorf("Error get redis info, %v", err)
+			}
+			reply.Content = utils.StringValue(redisInfo)
 		default:
 			return nil, nil
 		}
