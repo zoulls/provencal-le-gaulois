@@ -1,10 +1,11 @@
 package twitter
 
 import (
+	"strings"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
-	"strings"
 )
 
 func SyncList(rClient redis.Client, tConfig config.Twitter) (config.Twitter, error) {
@@ -21,7 +22,7 @@ func SyncList(rClient redis.Client, tConfig config.Twitter) (config.Twitter, err
 		if len(followIDstring) > 0 {
 			followIDstring = followIDstring + ","
 		}
-		followIDstring =  followIDstring + listStr
+		followIDstring = followIDstring + listStr
 	}
 	tConfig.FollowIDstring = followIDstring
 

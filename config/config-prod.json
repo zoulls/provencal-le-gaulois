@@ -24,5 +24,9 @@
     },
     "logger": {
         "level": "info"
+    },
+    "redis" : {
+        "pool": 5,
+        "pingTimer": 10
     }
 }

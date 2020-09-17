@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -22,6 +21,7 @@ type Config struct {
 	Twitter      *Twitter
 	StatusUpdate *StatusUpdate
 	Logger       *Logger
+	Discord 	 *Discord
 }
 
 type AuthConfig struct {
@@ -31,6 +31,7 @@ type AuthConfig struct {
 type RedisConfig struct {
 	URL string
 	Pool int64
+	PingTimer float64
 }
 
 // TWITTER
@@ -65,6 +66,10 @@ type StatusUpdate struct {
 
 type Logger struct {
 	Level string
+}
+
+type Discord struct {
+	AdminID string
 }
 
 // Config singleton
@@ -122,6 +127,10 @@ func firstInit() *Config {
 		follow.DiscordChan = os.Getenv("DISCORD_CHANNEL_FOR_TWEET_" + follow.Name)
 	}
 
+	conf.Discord = &Discord{
+		AdminID: os.Getenv("DISCORD_ADMIN_ID"),
+	}
+
 	conf.Twitter.Config = &TwitterConfig{
 		AccessToken:       os.Getenv("TWITTER_ACCESS_TOKEN"),
 		AccessTokenSecret: os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"),
@@ -129,14 +138,8 @@ func firstInit() *Config {
 		ConsumerSecret:    os.Getenv("TWITTER_CONSUMER_SECRET"),
 	}
 
-	redisPool, err := strconv.ParseInt(os.Getenv("REDIS_POOL"), 10, 64)
-	if err != nil {
-		panic(fmt.Errorf("unable to parse redis conf, %v\n", err))
-	}
-	conf.Redis = &RedisConfig{
-		URL: os.Getenv("REDIS_URL"),
-		Pool: redisPool,
-	}
+	// Redis conf
+	conf.Redis.URL = os.Getenv("REDIS_URL")
 
 	return conf
 }

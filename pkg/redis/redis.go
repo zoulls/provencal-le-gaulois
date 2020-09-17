@@ -1,11 +1,12 @@
 package redis
 
 import (
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"net/url"
+	"sync"
 	"time"
 
 	radix "github.com/mediocregopher/radix/v3"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
 )
@@ -18,18 +19,28 @@ type Client interface {
 }
 
 type client struct {
-	config *config.Config
 	*radix.Pool
 }
 
-func NewClient() (Client, error) {
-	conf := config.GetConfig()
-	pool, err := radix.NewPool("tcp", conf.Redis.URL, int(conf.Redis.Pool), radix.PoolConnFunc(customConnFunc))
-	client := &client{
-		config: conf,
-		Pool:   pool,
-	}
-	return client, err
+// redis client singleton
+var rClient *client
+
+// Check initialized exactly once
+var once sync.Once
+
+func NewClient() Client {
+	once.Do(func() {
+		conf := config.GetConfig()
+		pool, err := radix.NewPool("tcp", conf.Redis.URL, int(conf.Redis.Pool), radix.PoolConnFunc(customConnFunc))
+		if err != nil {
+			logger.Log.Errorf("Error during Redis init, %v", err)
+		}
+		rClient = &client{
+			Pool: pool,
+		}
+	})
+
+	return rClient
 }
 
 // Custom function with Auth connection
@@ -41,13 +52,13 @@ func customConnFunc(network, addr string) (radix.Conn, error) {
 	pass, exists := u.User.Password()
 	if exists {
 		return radix.Dial(network, addr,
-			radix.DialTimeout(30 * time.Second),
+			radix.DialTimeout(30*time.Second),
 			radix.DialAuthPass(pass),
 		)
 	}
 	logger.Log.Warn("redis password not configured")
 	return radix.Dial(network, addr,
-		radix.DialTimeout(30 * time.Second),
+		radix.DialTimeout(30*time.Second),
 	)
 }
 
@@ -94,6 +105,6 @@ func (c *client) Info() (*string, error) {
 		return nil, err
 	}
 
-	info := infoServ+infoCli+infoKeys
+	info := infoServ + infoCli + infoKeys
 	return &info, err
 }
