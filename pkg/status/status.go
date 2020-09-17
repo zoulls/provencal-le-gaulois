@@ -48,7 +48,6 @@ func (s *Status) Last(force bool) (string, error) {
 		}
 	}
 
-
 	status, err = s.rClient.GetDefaultStatus()
 	if err != nil {
 		return utils.StringValue(status), err

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/maritimusj/durafmt"
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func generateCountdown(force bool) (*string, error) {
 	var status *string
 
 	// Avoid to many update
-	if !force && !moreThan(conf.StatusUpdate.Every) {
+	if !force && !utils.MoreThan(conf.StatusUpdate.Every, lastSync) {
 		return nil, nil
 	}
 
@@ -48,12 +49,6 @@ func generateCountdown(force bool) (*string, error) {
 	}
 
 	return status, nil
-}
-
-// Return if the last sync is older than the min in minutes
-func moreThan(min float64) bool {
-	diff := time.Since(lastSync)
-	return diff.Minutes() > min
 }
 
 func initUnits() {

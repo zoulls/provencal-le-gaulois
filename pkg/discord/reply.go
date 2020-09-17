@@ -1,14 +1,16 @@
-package reply
+package discord
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
-	"strings"
 )
 
 func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.MessageSend, error) {
@@ -18,10 +20,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	reply := &discordgo.MessageSend{}
 
 	// Redis client
-	rClient, err := redis.NewClient()
-	if err != nil {
-		logger.Log.Errorf("Error during Redis init, %v", err)
-	}
+	rClient := redis.NewClient()
 
 	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])

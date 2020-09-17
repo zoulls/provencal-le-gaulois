@@ -8,7 +8,7 @@ import (
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
-	"github.com/zoulls/provencal-le-gaulois/pkg/reply"
+	"github.com/zoulls/provencal-le-gaulois/pkg/discord"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
 )
@@ -24,10 +24,7 @@ func main() {
 	logger.Log.Infof("Env: %s", os.Getenv("BOT_ENV"))
 
 	// Redis client
-	rClient, err := redis.NewClient()
-	if err != nil {
-		logger.Log.Errorf("Error during Redis init, %v", err)
-	}
+	rClient := redis.NewClient()
 
 	// Sync Twitter follows list
 	tConf, err := twitter.SyncList(rClient, *conf.Twitter)
@@ -38,9 +35,9 @@ func main() {
 	}
 
 	// Discord client
-	discord, err := discordgo.New("Bot " + conf.Auth.Secret)
+	ds, err := discordgo.New("Bot " + conf.Auth.Secret)
 	errCheck("error creating discord session", err)
-	user, err := discord.User("@me")
+	user, err := ds.User("@me")
 	errCheck("error retrieving account", err)
 	botID = user.ID
 
@@ -51,8 +48,8 @@ func main() {
 		logger.Log.Errorf("Error during status init, %v", err)
 	}
 
-	discord.AddHandler(commandHandler)
-	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
+	ds.AddHandler(commandHandler)
+	ds.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
 		err = discord.UpdateStatus(0, defaultStatus)
 		if err != nil {
 			logger.Log.Errorf("Error attempting to set my status, %v", err)
@@ -61,11 +58,11 @@ func main() {
 		logger.Log.Infof("%s has started on %d servers", conf.Name, len(servers))
 	})
 
-	err = discord.Open()
+	err = ds.Open()
 	errCheck("Error opening connection to Discord", err)
-	defer discord.Close()
+	defer ds.Close()
 
-	twitter.StreamTweets(discord, sClient)
+	twitter.StreamTweets(ds, sClient, rClient)
 
 	<-make(chan struct{})
 	logger.Log.Errorf("%s stop to %s", conf.Name, conf.Status)
@@ -86,7 +83,7 @@ func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	res, err := reply.GetReply(s, m)
+	res, err := discord.GetReply(s, m)
 	if err != nil {
 		logger.Log.Errorf("Message send error: %v", err)
 	}
