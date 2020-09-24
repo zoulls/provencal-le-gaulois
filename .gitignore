@@ -78,8 +78,5 @@ $RECYCLE.BIN/
 # Log file
 *.log
 
-# Config file
-/config/config.json
-
 # Binary
 provencal-le-gaulois
