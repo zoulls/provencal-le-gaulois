@@ -58,7 +58,8 @@ func embedGenerator() *discordgo.MessageEmbed {
 	}
 }
 
-func FromTweet(t *anaconda.Tweet) *discordgo.MessageEmbed {
+// EmbedFromTweet return an embed message with the tweet data
+func EmbedFromTweet(t *anaconda.Tweet) *discordgo.MessageEmbed {
 	tweetTime, _ := t.CreatedAtTime()
 	timestamp := tweetTime.UTC().Format(time.RFC3339)
 
@@ -93,6 +94,11 @@ func FromTweet(t *anaconda.Tweet) *discordgo.MessageEmbed {
 	}
 
 	return message
+}
+
+// URLFromTweet return the tweet url
+func URLFromTweet(t *anaconda.Tweet) string {
+	return "https://twitter.com/" + t.User.ScreenName + "/status/" + t.IdStr
 }
 
 func tweetReplace(str string, strSearch string, strRplace string) string {

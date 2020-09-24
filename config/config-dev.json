@@ -7,12 +7,12 @@
             {
                 "name": "GAME_NEWS",
                 "key": "twitterGameNews",
-                "list": ["1344755923"]
+                "listStr": "1344755923"
             },
             {
                 "name": "GAME_STORE",
                 "key": "twitterGameStore",
-                "list": ["2899773086"]
+                "listStr": "2899773086"
             }
         ]
     },
@@ -27,6 +27,6 @@
     },
     "redis" : {
         "pool": 1,
-        "pingTimer": 1
+        "pingTimer": 10
     }
 }

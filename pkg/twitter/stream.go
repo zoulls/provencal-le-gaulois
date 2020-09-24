@@ -71,9 +71,10 @@ func StreamTweets(ds *discordgo.Session, sClient *status.Status, rClient redis.C
 
 func createMessage(ds *discordgo.Session, tweet *anaconda.Tweet) error {
 	conf := config.GetConfig()
-	message := discord.FromTweet(tweet)
+
+	message := discord.URLFromTweet(tweet)
 	reply := &discordgo.MessageSend{
-		Embed: message,
+		Content: message,
 	}
 
 	discordID, err := getDiscordChanID(conf.Twitter.TwitterFollows, tweet)

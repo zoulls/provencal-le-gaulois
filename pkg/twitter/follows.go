@@ -13,7 +13,7 @@ func SyncList(rClient redis.Client, tConfig config.Twitter) (config.Twitter, err
 
 	for _, follow := range tConfig.TwitterFollows {
 		list, err := rClient.GetTwitterFollows(follow)
-		if err != nil {
+		if err != nil || len(utils.StringValue(list)) == 0 {
 			return tConfig, err
 		}
 		listStr := utils.StringValue(list)
