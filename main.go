@@ -6,9 +6,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
-	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/discord"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
+	"github.com/zoulls/provencal-le-gaulois/pkg/passeport"
+	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
 	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
 )
@@ -18,6 +19,14 @@ var (
 )
 
 func main() {
+	check, err := passeport.CheckPasseport()
+	logger.Log.Infof("Check: %s", check)
+	if err != nil {
+		logger.Log.Errorf("Error: %s", err.Error())
+	}
+}
+
+func myMain() {
 	// Init Config
 	conf := config.GetConfig()
 
