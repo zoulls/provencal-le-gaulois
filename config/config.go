@@ -22,6 +22,7 @@ type Config struct {
 	StatusUpdate *StatusUpdate
 	Logger       *Logger
 	Discord 	 *Discord
+	ExtRequest	 *ExtRequest
 }
 
 type AuthConfig struct {
@@ -70,6 +71,11 @@ type Logger struct {
 
 type Discord struct {
 	AdminID string
+}
+
+type ExtRequest struct {
+	Enabled bool
+	Every   float64
 }
 
 // Config singleton

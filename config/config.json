@@ -28,5 +28,9 @@
     "redis" : {
         "pool": 5,
         "pingTimer": 10
+    },
+    "extRequest": {
+        "enabled": false,
+        "every": 1
     }
 }

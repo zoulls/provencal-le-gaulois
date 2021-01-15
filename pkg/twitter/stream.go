@@ -2,8 +2,11 @@ package twitter
 
 import (
 	"errors"
+	"fmt"
+	"github.com/zoulls/provencal-le-gaulois/pkg/extRequest"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
@@ -43,6 +46,19 @@ func StreamTweets(ds *discordgo.Session, sClient *status.Status, rClient redis.C
 			err = ds.UpdateStatus(0, lastStatus)
 			if err != nil {
 				logger.Log.Errorf("Error during status update, %v", err)
+			}
+		}
+
+		if conf.ExtRequest.Enabled {
+			if utils.MoreThan(conf.ExtRequest.Every, extRequest.LastSync) {
+				// Refresh timer
+				extRequest.LastSync = time.Now()
+
+				check, err := extRequest.CallExtRequest()
+				if err != nil {
+					logger.Log.Errorf("Error during ExtRequest: %s", err.Error())
+				}
+				discord.SendPrivateMessage(ds, conf.Discord.AdminID, fmt.Sprintf("ExtRequest check: %s", strconv.FormatBool(check)))
 			}
 		}
 
