@@ -18,10 +18,10 @@ daemon mode
 ```
 $ provencal-le-gaulois &
 ```
+
 ## Logs
 During the first launch, a log file *info.log* is generated at the same directory of the binary.
 The log file is wipe at every launch.
-#
 
 ## Todo
 * Create a command to configure directly in discord the different channels for the tweets push (use a DB or overwrite the config file ?)
@@ -29,11 +29,9 @@ The log file is wipe at every launch.
 * Discord Embedded message with Twitter Websites Overview
 * Perceval's quotes
 
-#
 
 ## Dev Getting Started
-* Install [dep](https://golang.github.io/dep/docs/installation.html)
-* Use the command `dep ensure` to pull the vendor
+* Use the commands `go mod tidy` to pull the vendor
 * Copy config-dev.json into config.json in folder /config
 * Copy .env-dev into .env at the root project
 * Write Discord bot secret key, Twitter secret key and Discord channels ID in .env file

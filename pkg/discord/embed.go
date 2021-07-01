@@ -43,6 +43,39 @@ func help() *discordgo.MessageEmbed {
 	}
 }
 
+func helpAdmin() *discordgo.MessageEmbed {
+	config := config.GetConfig()
+
+	fileds := make([]*discordgo.MessageEmbedField, 0)
+	fileds = append(fileds, &discordgo.MessageEmbedField{
+		Name:   config.PrefixCmd + "updateStatus",
+		Value:  "Force update bot status",
+		Inline: false,
+	})
+	fileds = append(fileds, &discordgo.MessageEmbedField{
+		Name:   config.PrefixCmd + "statusLastSync",
+		Value:  "Last timestamp for bot status sync",
+		Inline: false,
+	})
+	fileds = append(fileds, &discordgo.MessageEmbedField{
+		Name:   config.PrefixCmd + "redisInfo",
+		Value:  "Redis config info",
+		Inline: false,
+	})
+	fileds = append(fileds, &discordgo.MessageEmbedField{
+		Name:   config.PrefixCmd + "twitterFollows",
+		Value:  "List of Twitter follows IDs for store and game news",
+		Inline: false,
+	})
+
+	return &discordgo.MessageEmbed{
+		Title:       ":information_source: Help Admin",
+		Description: "List of Admin commands",
+		Color:       30935,
+		Fields:      fileds,
+	}
+}
+
 func embedGenerator() *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		Title:       "Message Embed Generator",
