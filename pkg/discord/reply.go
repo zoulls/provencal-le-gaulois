@@ -39,6 +39,8 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 			reply.Content = "Ping! :ping_pong: petit malin! :laughing:"
 		case conf.PrefixCmd + "help":
 			reply.Embed = help()
+		case conf.PrefixCmd + "helpAdmin":
+			reply.Embed = helpAdmin()
 		case conf.PrefixCmd + "embedGen":
 			reply.Embed = embedGenerator()
 		case conf.PrefixCmd + "updateStatus":
