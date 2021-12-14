@@ -22,15 +22,19 @@ func New(config *config.Config, rClient redis.Client) *Status {
 	}
 }
 
-func (s *Status) GetDefault() (*string, error) {
-	status, err := s.rClient.GetDefaultStatus()
+func (s *Status) GetDefault() (string, error) {
+	//Take redis status
+	statusInRedis, err := s.rClient.GetDefaultStatus()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if status != nil {
+
+	status := utils.StringValue(statusInRedis)
+	if len(status) > 0 {
 		return status, err
 	}
-	return &s.config.Status, err
+	//Take status in config it not defined in redis
+	return s.config.Status, err
 }
 
 func (s *Status) Last(force bool) (string, error) {
@@ -38,23 +42,22 @@ func (s *Status) Last(force bool) (string, error) {
 
 	conf := config.GetConfig()
 
-	// Init default status
-	status := utils.String(conf.Status)
-
-	if conf.StatusUpdate.Enabled {
-		status, err = generateCountdown(force)
-		if err != nil {
-			return utils.StringValue(status), err
-		}
+	// Init with default status
+	status, err := s.GetDefault()
+	if err != nil {
+		return status, err
 	}
 
-	status, err = s.rClient.GetDefaultStatus()
-	if err != nil {
-		return utils.StringValue(status), err
+	if conf.StatusUpdate.Enabled {
+		statusCtd, err := generateCountdown(force)
+		if err != nil {
+			return status, err
+		}
+		status = utils.StringValue(statusCtd)
 	}
 
 	lastSync = time.Now()
-	return utils.StringValue(status), err
+	return status, err
 }
 
 func GetLastSync() string {

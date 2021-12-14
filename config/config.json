@@ -20,7 +20,8 @@
         "date": "2020-01-09 05:00",
         "nbUnits": 4,
         "enabled": false,
-        "every": 1
+        "every": 1,
+        "game": ""
     },
     "logger": {
         "level": "info"
