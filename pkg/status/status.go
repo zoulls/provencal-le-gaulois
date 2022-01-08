@@ -9,6 +9,7 @@ import (
 )
 
 var lastSync = time.Now()
+var currentStatus string
 
 type Status struct {
 	config  *config.Config
@@ -53,11 +54,23 @@ func (s *Status) Last(force bool) (string, error) {
 		if err != nil {
 			return status, err
 		}
-		status = utils.StringValue(statusCtd)
+		status = currentStatus
+		if statusCtd != nil {
+			status = utils.StringValue(statusCtd)
+		}
 	}
 
 	lastSync = time.Now()
+	currentStatus = status
 	return status, err
+}
+
+func  (s *Status) GetCurrentStatus() string {
+	return currentStatus
+}
+
+func  (s *Status) SetCurrentStatus(status string) {
+	currentStatus = status
 }
 
 func GetLastSync() string {
