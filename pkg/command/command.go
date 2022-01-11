@@ -8,5 +8,5 @@ import (
 
 func GetUptime() time.Duration {
 	conf := config.GetConfig()
-	return time.Until(conf.GetStartDate())
+	return time.Since(conf.GetStartDate())
 }
