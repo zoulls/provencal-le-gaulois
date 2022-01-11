@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -22,6 +23,7 @@ type Config struct {
 	StatusUpdate *StatusUpdate
 	Logger       *Logger
 	Discord 	 *Discord
+	startDate	 time.Time
 }
 
 type AuthConfig struct {
@@ -109,6 +111,10 @@ func firstInit() *Config {
 	}
 
 	conf := &Config{}
+
+	// Init start date
+	conf.startDate = time.Now()
+
 	err = viper.Unmarshal(conf)
 	if err != nil {
 		panic(fmt.Errorf("unable to decode into config struct, %v\n", err))
@@ -159,4 +165,8 @@ func UpdateTwitter(twitterCf Twitter) *Config {
 
 func (c *Config) SetID(id string) {
 	c.ID = id
+}
+
+func (c *Config) GetStartDate() time.Time {
+	return c.startDate
 }

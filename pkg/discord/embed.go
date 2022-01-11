@@ -11,26 +11,26 @@ import (
 )
 
 func help() *discordgo.MessageEmbed {
-	config := config.GetConfig()
+	conf := config.GetConfig()
 
-	fileds := make([]*discordgo.MessageEmbedField, 0)
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "ping",
+	fields := make([]*discordgo.MessageEmbedField, 0, 4)
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "ping",
 		Value:  "Ping pong party :ping_pong:",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "help",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "help",
 		Value:  "Just what you read at this moment",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "embedGen",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "embedGen",
 		Value:  "URL for Message Embed Generator",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "embed <json>",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "embed <json>",
 		Value:  "Create a embed message from json of Embed Generator",
 		Inline: false,
 	})
@@ -39,31 +39,36 @@ func help() *discordgo.MessageEmbed {
 		Title:       ":information_source: Help",
 		Description: "List of commands",
 		Color:       30935,
-		Fields:      fileds,
+		Fields:      fields,
 	}
 }
 
 func helpAdmin() *discordgo.MessageEmbed {
-	config := config.GetConfig()
+	conf := config.GetConfig()
 
-	fileds := make([]*discordgo.MessageEmbedField, 0)
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "updateStatus",
+	fields := make([]*discordgo.MessageEmbedField, 0, 5)
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "uptime",
+		Value:  "Bot uptime",
+		Inline: false,
+	})
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "updateStatus",
 		Value:  "Force update bot status",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "statusLastSync",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "statusLastSync",
 		Value:  "Last timestamp for bot status sync",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "redisInfo",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "redisInfo",
 		Value:  "Redis config info",
 		Inline: false,
 	})
-	fileds = append(fileds, &discordgo.MessageEmbedField{
-		Name:   config.PrefixCmd + "twitterFollows",
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   conf.PrefixCmd + "twitterFollows",
 		Value:  "List of Twitter follows IDs for store and game news",
 		Inline: false,
 	})
@@ -72,7 +77,7 @@ func helpAdmin() *discordgo.MessageEmbed {
 		Title:       ":information_source: Help Admin",
 		Description: "List of Admin commands",
 		Color:       30935,
-		Fields:      fileds,
+		Fields:      fields,
 	}
 }
 

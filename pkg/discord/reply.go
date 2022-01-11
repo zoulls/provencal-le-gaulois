@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/command"
 	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
 	"github.com/zoulls/provencal-le-gaulois/pkg/status"
@@ -22,7 +23,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	// Redis client
 	rClient := redis.NewClient()
 
-	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
+	if strings.HasPrefix(m.Content, conf.PrefixCmd + "embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
 			err = s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
@@ -68,6 +69,9 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 				logger.Log.Errorf("Error get redis info, %v", err)
 			}
 			reply.Content = utils.StringValue(redisInfo)
+		case conf.PrefixCmd + "uptime":
+			uptime := command.GetUptime()
+			reply.Content = uptime.String()
 		default:
 			return nil, nil
 		}
