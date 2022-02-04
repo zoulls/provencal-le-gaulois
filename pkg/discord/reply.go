@@ -23,7 +23,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	// Redis client
 	rClient := redis.NewClient()
 
-	if strings.HasPrefix(m.Content, conf.PrefixCmd + "embed ") {
+	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
 			err = s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
@@ -33,7 +33,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 		case conf.PrefixCmd + "ping":
 			botStatus, err := rClient.Ping()
 			if err != nil {
-				logger.Log.Errorf("Error get bot status, %v", err)
+				logger.Log().Errorf("Error get bot status, %v", err)
 			}
 			reply.Content = utils.StringValue(botStatus)
 		case conf.PrefixCmd + "pong":
@@ -48,13 +48,13 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 			sClient := status.New(conf, rClient)
 			lastStatus, err := sClient.Last(true)
 			if err != nil {
-				logger.Log.Errorf("Error retrieving the last status, %v", err)
+				logger.Log().Errorf("Error retrieving the last status, %v", err)
 				reply.Content = "Error retrieving the last status, use of default config"
 			}
 
 			err = s.UpdateStatus(0, lastStatus)
 			if err != nil {
-				logger.Log.Errorf("Error during status update, %v", err)
+				logger.Log().Errorf("Error during status update, %v", err)
 			} else {
 				reply.Content = "Status updated successfully !"
 			}
@@ -66,7 +66,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 		case conf.PrefixCmd + "redisInfo":
 			redisInfo, err := rClient.Info()
 			if err != nil {
-				logger.Log.Errorf("Error get redis info, %v", err)
+				logger.Log().Errorf("Error get redis info, %v", err)
 			}
 			reply.Content = utils.StringValue(redisInfo)
 		case conf.PrefixCmd + "uptime":

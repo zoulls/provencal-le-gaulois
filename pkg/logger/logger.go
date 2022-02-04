@@ -1,21 +1,20 @@
 package logger
 
 import (
-	"os"
-
 	"github.com/sirupsen/logrus"
-
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"os"
 )
 
-var Log = logrus.New()
+var log *logrus.Logger
 
 func init() {
+	log = logrus.New()
 	// Log as JSON instead of the default ASCII formatter.
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	log.SetFormatter(&logrus.JSONFormatter{})
 
 	// Output to stdout instead of the default stderr
-	logrus.SetOutput(os.Stdout)
+	log.SetOutput(os.Stdout)
 
 	conf := config.GetConfig()
 	lvl, err := logrus.ParseLevel(conf.Logger.Level)
@@ -23,5 +22,9 @@ func init() {
 		panic(err)
 	}
 
-	logrus.SetLevel(lvl)
+	log.SetLevel(lvl)
+}
+
+func Log() *logrus.Logger {
+	return log
 }

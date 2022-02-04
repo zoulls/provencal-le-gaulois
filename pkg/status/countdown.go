@@ -2,10 +2,12 @@ package status
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/maritimusj/durafmt"
+
 	"github.com/zoulls/provencal-le-gaulois/config"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
-	"time"
 )
 
 // See http://golang.org/pkg/time/#Parse

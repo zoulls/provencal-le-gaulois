@@ -33,7 +33,7 @@ func NewClient() Client {
 		conf := config.GetConfig()
 		pool, err := radix.NewPool("tcp", conf.Redis.URL, int(conf.Redis.Pool), radix.PoolConnFunc(customConnFunc))
 		if err != nil {
-			logger.Log.Errorf("Error during Redis init, %v", err)
+			logger.Log().Errorf("Error during Redis init, %v", err)
 		}
 		rClient = &client{
 			Pool: pool,
@@ -56,7 +56,7 @@ func customConnFunc(network, addr string) (radix.Conn, error) {
 			radix.DialAuthPass(pass),
 		)
 	}
-	logger.Log.Warn("redis password not configured")
+	logger.Log().Warn("redis password not configured")
 	return radix.Dial(network, addr,
 		radix.DialTimeout(30*time.Second),
 	)

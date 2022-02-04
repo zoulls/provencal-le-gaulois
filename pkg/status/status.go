@@ -1,11 +1,12 @@
 package status
 
 import (
-	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 	"time"
 
 	"github.com/zoulls/provencal-le-gaulois/config"
+	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
 	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
 var lastSync = time.Now()
@@ -57,19 +58,23 @@ func (s *Status) Last(force bool) (string, error) {
 		status = currentStatus
 		if statusCtd != nil {
 			status = utils.StringValue(statusCtd)
+			lastSync = time.Now()
+
+			// Debug log
+			logger.Log().Debugf("New status: %s", status)
+			logger.Log().Debugf("New lastSync: %s", lastSync.String())
 		}
 	}
 
-	lastSync = time.Now()
 	currentStatus = status
 	return status, err
 }
 
-func  (s *Status) GetCurrentStatus() string {
+func (s *Status) GetCurrentStatus() string {
 	return currentStatus
 }
 
-func  (s *Status) SetCurrentStatus(status string) {
+func (s *Status) SetCurrentStatus(status string) {
 	currentStatus = status
 }
 

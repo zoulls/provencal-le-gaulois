@@ -22,8 +22,8 @@ type Config struct {
 	Twitter      *Twitter
 	StatusUpdate *StatusUpdate
 	Logger       *Logger
-	Discord 	 *Discord
-	startDate	 time.Time
+	Discord      *Discord
+	startDate    time.Time
 }
 
 type AuthConfig struct {
@@ -31,8 +31,8 @@ type AuthConfig struct {
 }
 
 type RedisConfig struct {
-	URL string
-	Pool int64
+	URL       string
+	Pool      int64
 	PingTimer float64
 }
 
@@ -45,9 +45,9 @@ type Twitter struct {
 
 type TwitterFollow struct {
 	Name        string
-	Key 		string
+	Key         string
 	ListStr     string
-	List		[]string
+	List        []string
 	DiscordChan string
 }
 
@@ -76,6 +76,7 @@ type Discord struct {
 
 // Config singleton
 var config *Config
+
 // Check initialized exactly once
 var once sync.Once
 
@@ -97,8 +98,8 @@ func firstInit() *Config {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	err = viper.ReadInConfig()      // Find and read the config file
-	if err != nil {                 // Handle errors reading the config file
+	err = viper.ReadInConfig() // Find and read the config file
+	if err != nil {            // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file, %v\n", err))
 	}
 
