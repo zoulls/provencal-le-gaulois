@@ -64,11 +64,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-
 # End of https://www.gitignore.io/api/visualstudiocode,windows,go,linux
 
 ### Intellij ###
 .idea
+.fleet
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
@@ -79,4 +79,7 @@ $RECYCLE.BIN/
 *.log
 
 # Binary
-provencal-le-gaulois
+bin/provencal-le-gaulois
+
+# Prod env
+.env-prod
