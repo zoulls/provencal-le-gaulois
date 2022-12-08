@@ -14,10 +14,24 @@ import (
 )
 
 var (
+    // BuildTime is replaced at compile time using ldflags
+    BuildTime string
+    // Version is replaced at compile time using ldflags
+    Version string
+    // GitBranch is replaced at compile time using ldflags
+    GitBranch string
+    // GitCommit is replaced at compile time using ldflags
+    GitCommit string
+
+    // Bot identification
 	botID string
 )
 
 func main() {
+
+    // Build logs
+    logger.Log().Infof("go version: %v, git branch: %v, git commit: %v, build time: %v", Version, GitBranch, GitCommit, BuildTime)
+
 	// Init Config
 	conf := config.GetConfig()
 

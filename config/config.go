@@ -146,7 +146,14 @@ func firstInit() *Config {
 	}
 
 	// Redis conf
-	conf.Redis.URL = os.Getenv("REDIS_URL")
+    conf.Redis.URL = os.Getenv("REDIS_URL")
+
+    // Check if docker redis config exist
+    dockerRedisAddr := os.Getenv("REDIS_PORT")
+    if len(dockerRedisAddr) > 0 {
+        // Overwrite with docker redis config
+        conf.Redis.URL = strings.Replace(dockerRedisAddr, "tcp", "redis", 3)
+	}
 
 	return conf
 }
