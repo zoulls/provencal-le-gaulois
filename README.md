@@ -5,33 +5,37 @@ Provencal le gaulois is a bot discord written in go.
 * Create an embed message via a json object ( [json generator](https://leovoel.github.io/embed-visualizer/) )
 * Publish on a discord channel the last tweets of users followed
 * Use `~help` in a discord channel to see all the command available
+* `~helpAdmin` to check redis status and bot updtime
 
-## Installing
-* Generate go binary `go build main.go`
-* Copy config-prod.json to config.json
-* Copy .env-dev to .env
-* Write Discord bot secret key, Twitter secret key and Discord channels ID in the .env file
+## Setup
+* Check and adjust config.json file
+* Copy `.env-example` to `.env-prod` and `.env`
+* `.env` is used for local run,`.env-prod` is for docker container
+* Write Discord bot secret key, Twitter secret key and Discord channels ID in the different env files
+
+## Run in docker
+* Generate binary and docker image `make build`
+* Run redis container `docker run --name redis -d -p 6379:6379 redis`
+* Run bot image link to redis container `docker run --name provencal-le-gaulois -d --link redis:redis provencal-le-gaulois:<latest_tag>`
+
+## Run Localy
+* Generate go binary `make binary`
 * Place config.json and .env files at the same directory of the binary
-
-## Launch
-daemon mode
+* To run in daemon mode
 ```
 $ provencal-le-gaulois &
 ```
 
 ## Logs
-During the first launch, a log file *info.log* is generated at the same directory of the binary.
-The log file is wipe at every launch.
+The logs are print in the Stdout
 
 ## Todo
 * Create a command to configure directly in discord the different channels for the tweets push (use a DB or overwrite the config file ?)
-* Add a logger with error levels
-* Discord Embedded message with Twitter Websites Overview
 * Perceval's quotes
-
+* Auto detect Free game tweet
+* Multi config in redis for multi server usage
 
 ## Dev Getting Started
 * Use the commands `go mod tidy` to pull the vendor
-* Copy config-dev.json into config.json in folder /config
-* Copy .env-dev into .env at the root project
-* Write Discord bot secret key, Twitter secret key and Discord channels ID in .env file
+* Update .env values at the root project with Discord bot secret key, Twitter secret key and Discord channels ID etc...
+* In the env varibale `CONFIG_FILENAME` put `config-dev` to use the config file `config-dev.json` of config folder
