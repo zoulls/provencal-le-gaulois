@@ -18,9 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
-	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
-	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
