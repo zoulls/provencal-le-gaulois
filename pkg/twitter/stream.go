@@ -46,7 +46,7 @@ func StreamTweets(ds *discordgo.Session, sClient *status.Status, rClient redis.C
 			if lastStatus != cStatus {
 				// Debug log
 				logger.Log().Debugf("lastStatus, %s", lastStatus)
-				err = ds.UpdateStatus(0, lastStatus)
+				err = ds.UpdateGameStatus(0, lastStatus)
 				if err != nil {
 					logger.Log().Errorf("Error during status update, %v", err)
 				}

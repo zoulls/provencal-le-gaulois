@@ -52,7 +52,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 				reply.Content = "Error retrieving the last status, use of default config"
 			}
 
-			err = s.UpdateStatus(0, lastStatus)
+			err = s.UpdateGameStatus(0, lastStatus)
 			if err != nil {
 				logger.Log().Errorf("Error during status update, %v", err)
 			} else {
