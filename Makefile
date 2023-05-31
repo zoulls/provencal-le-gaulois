@@ -25,3 +25,7 @@ binary:
 ## Build docker image
 build-image:
 	docker build . --tag $(APP_NAME):$(git_tag)
+
+## Build Dev docker image
+build-dev-image:
+	docker build . --file Dockerfile-dev --tag $(APP_NAME):$(git_tag)-dev

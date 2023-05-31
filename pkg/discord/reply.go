@@ -23,6 +23,8 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	// Redis client
 	rClient := redis.NewClient()
 
+	logger.Log().Debugf("Cmd received, %s", m.Content)
+
 	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
