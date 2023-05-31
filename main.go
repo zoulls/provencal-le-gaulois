@@ -14,23 +14,23 @@ import (
 )
 
 var (
-    // BuildTime is replaced at compile time using ldflags
-    BuildTime string
-    // Version is replaced at compile time using ldflags
-    Version string
-    // GitBranch is replaced at compile time using ldflags
-    GitBranch string
-    // GitCommit is replaced at compile time using ldflags
-    GitCommit string
+	// BuildTime is replaced at compile time using ldflags
+	BuildTime string
+	// Version is replaced at compile time using ldflags
+	Version string
+	// GitBranch is replaced at compile time using ldflags
+	GitBranch string
+	// GitCommit is replaced at compile time using ldflags
+	GitCommit string
 
-    // Bot identification
+	// Bot identification
 	botID string
 )
 
 func main() {
 
-    // Build logs
-    logger.Log().Infof("go version: %v, git branch: %v, git commit: %v, build time: %v", Version, GitBranch, GitCommit, BuildTime)
+	// Build logs
+	logger.Log().Infof("go version: %v, git branch: %v, git commit: %v, build time: %v", Version, GitBranch, GitCommit, BuildTime)
 
 	// Init Config
 	conf := config.GetConfig()
@@ -66,7 +66,7 @@ func main() {
 
 	ds.AddHandler(commandHandler)
 	ds.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateStatus(0, defaultStatus)
+		err = discord.UpdateGameStatus(0, defaultStatus)
 		if err != nil {
 			logger.Log().Errorf("Error attempting to set my status, %v", err)
 		}

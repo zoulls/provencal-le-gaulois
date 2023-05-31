@@ -34,6 +34,8 @@ func StreamTweets(ds *discordgo.Session, sClient *status.Status, rClient redis.C
 	lastPing := time.Now()
 
 	for t := range s.C {
+		logger.Log().Debug("Tweet received")
+
 		// Check for status update
 		if conf.StatusUpdate.Enabled {
 			cStatus := sClient.GetCurrentStatus()
@@ -46,7 +48,7 @@ func StreamTweets(ds *discordgo.Session, sClient *status.Status, rClient redis.C
 			if lastStatus != cStatus {
 				// Debug log
 				logger.Log().Debugf("lastStatus, %s", lastStatus)
-				err = ds.UpdateStatus(0, lastStatus)
+				err = ds.UpdateGameStatus(0, lastStatus)
 				if err != nil {
 					logger.Log().Errorf("Error during status update, %v", err)
 				}
@@ -80,6 +82,8 @@ func createMessage(ds *discordgo.Session, tweet *anaconda.Tweet) error {
 	conf := config.GetConfig()
 
 	message := discord.URLFromTweet(tweet)
+	logger.Log().Debugf("Tweet received, %s", message)
+
 	reply := &discordgo.MessageSend{
 		Content: message,
 	}

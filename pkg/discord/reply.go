@@ -23,6 +23,8 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 	// Redis client
 	rClient := redis.NewClient()
 
+	logger.Log().Debugf("Cmd received, %s", m.Content)
+
 	if strings.HasPrefix(m.Content, conf.PrefixCmd+"embed ") {
 		reply, err = createReplyFromJson(m.Content[7:len(m.Content)])
 		if err == nil {
@@ -52,7 +54,7 @@ func GetReply(s *discordgo.Session, m *discordgo.MessageCreate) (*discordgo.Mess
 				reply.Content = "Error retrieving the last status, use of default config"
 			}
 
-			err = s.UpdateStatus(0, lastStatus)
+			err = s.UpdateGameStatus(0, lastStatus)
 			if err != nil {
 				logger.Log().Errorf("Error during status update, %v", err)
 			} else {
