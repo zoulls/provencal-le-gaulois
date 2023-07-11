@@ -1,9 +1,6 @@
 FROM alpine:3.14
 
 COPY bin/provencal-le-gaulois .
-
-# Dev
-COPY config/config-dev.json ./config.json
-COPY .env .
+COPY .env-dev .env
 
 ENTRYPOINT ["./provencal-le-gaulois"]

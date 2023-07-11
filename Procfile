@@ -1,2 +1,0 @@
-worker: provencal-le-gaulois
-

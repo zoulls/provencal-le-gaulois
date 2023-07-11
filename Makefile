@@ -18,6 +18,9 @@ include help.mk
 ## Build app and docker image
 build: binary build-image
 
+## Build app and docker dev image
+dev: binary build-dev-image
+
 ## Build go binary
 binary:
 	CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -o bin/$(APP_NAME) -ldflags $(go_build_version_flags) $(BINARY_SRC)
