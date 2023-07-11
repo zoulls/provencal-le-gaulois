@@ -1,19 +1,25 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
+	"os/signal"
+	"time"
 
+	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
+	cron "github.com/robfig/cron/v3"
 
-	"github.com/zoulls/provencal-le-gaulois/config"
-	"github.com/zoulls/provencal-le-gaulois/pkg/discord"
-	"github.com/zoulls/provencal-le-gaulois/pkg/logger"
-	"github.com/zoulls/provencal-le-gaulois/pkg/redis"
-	"github.com/zoulls/provencal-le-gaulois/pkg/status"
-	"github.com/zoulls/provencal-le-gaulois/pkg/twitter"
+	"github.com/zoulls/provencal-le-gaulois/pkg/cmd"
 )
 
 var (
+	s               *discordgo.Session
+	c               *cron.Cron
+	commands        = cmd.GetApplicationCommand()
+	commandHandlers = cmd.GetCommandHandlers()
 	// BuildTime is replaced at compile time using ldflags
 	BuildTime string
 	// Version is replaced at compile time using ldflags
@@ -22,89 +28,103 @@ var (
 	GitBranch string
 	// GitCommit is replaced at compile time using ldflags
 	GitCommit string
-
-	// Bot identification
-	botID string
 )
 
-func main() {
-
-	// Build logs
-	logger.Log().Infof("go version: %v, git branch: %v, git commit: %v, build time: %v", Version, GitBranch, GitCommit, BuildTime)
-
-	// Init Config
-	conf := config.GetConfig()
-
-	logger.Log().Infof("Env: %s", os.Getenv("BOT_ENV"))
-
-	logger.Log().Infof("Logger level: %s", logger.Log().Level.String())
-
-	// Redis client
-	rClient := redis.NewClient()
-
-	// Sync Twitter follows list
-	tConf, err := twitter.SyncList(rClient, *conf.Twitter)
+func init() {
+	// Load .env var
+	_, err := os.Stat(".env")
 	if err != nil {
-		logger.Log().Errorf("Error during Twitter sync list, %v", err)
-	} else {
-		conf = config.UpdateTwitter(tConf)
+		panic(fmt.Errorf("Error no .env file, %v\n", err))
+	}
+	err = godotenv.Load()
+	if err != nil {
+		panic(fmt.Errorf("Error loading .env file, %v\n", err))
 	}
 
-	// Discord client
-	ds, err := discordgo.New("Bot " + conf.Auth.Secret)
-	errCheck("error creating discord session", err)
-	user, err := ds.User("@me")
-	errCheck("error retrieving account", err)
-	botID = user.ID
-
-	// Get default status
-	sClient := status.New(conf, rClient)
-	defaultStatus, err := sClient.Last(true)
+	// Init discord session
+	s, err = discordgo.New("Bot " + os.Getenv("BOT_TOKEN"))
 	if err != nil {
-		logger.Log().Errorf("Error during status init, %v", err)
+		log.Fatalf("Invalid bot parameters: %v", err)
 	}
 
-	ds.AddHandler(commandHandler)
-	ds.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		err = discord.UpdateGameStatus(0, defaultStatus)
-		if err != nil {
-			logger.Log().Errorf("Error attempting to set my status, %v", err)
+	// Init cron
+	c = cron.New()
+
+	// Init Twitter client
+	twitterClient := anaconda.NewTwitterApiWithCredentials(os.Getenv("TWITTER_ACCESS_TOKEN"), os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"), os.Getenv("TWITTER_CONSUMER_KEY"), os.Getenv("TWITTER_CONSUMER_SECRET"))
+
+	// Init command option
+	opt := cmd.Option{
+		Cron:       c,
+		LaunchTime: time.Now(), // Set launch time for uptime
+		BuildInfo: cmd.BuildInfo{
+			Version:   Version,
+			BuildTime: BuildTime,
+			GitBranch: GitBranch,
+			GitCommit: GitCommit,
+		},
+		TwitterClient: twitterClient,
+	}
+
+	// Declare ApplicationCommandData
+	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i, opt)
 		}
-		servers := discord.State.Guilds
-		logger.Log().Infof("%s has started on %d servers", conf.Name, len(servers))
 	})
-
-	err = ds.Open()
-	errCheck("Error opening connection to Discord", err)
-	defer ds.Close()
-
-	twitter.StreamTweets(ds, sClient, rClient)
-
-	<-make(chan struct{})
-	logger.Log().Errorf("%s stop to %s", conf.Name, conf.Status)
 }
 
-func errCheck(msg string, err error) {
+func main() {
+	// Build logs
+	log.Printf("version: %v, git branch: %v, git commit: %v, build time: %v", Version, GitBranch, GitCommit, BuildTime)
+	// Bot env
+	log.Printf("Env: %s", os.Getenv("BOT_ENV"))
+
+	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
+	err := s.Open()
 	if err != nil {
-		logger.Log().Errorf("%s: %v", msg, err)
-	}
-}
-
-func commandHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// init var
-	user := m.Author
-
-	if user.ID == botID || user.Bot {
-		//Do nothing because the bot is talking
-		return
+		log.Fatalf("Cannot open the session: %v", err)
 	}
 
-	res, err := discord.GetReply(s, m)
-	if err != nil {
-		logger.Log().Errorf("Message send error: %v", err)
+	log.Print("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, v := range commands {
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, os.Getenv("SERVER_ID"), v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
+		registeredCommands[i] = cmd
 	}
-	if res != nil {
-		_, err = s.ChannelMessageSendComplex(m.ChannelID, res)
-		errCheck("Error during bot reply", err)
+
+	// Close discord connection
+	defer s.Close()
+
+	// Stop cron scheduler
+	defer c.Stop()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	log.Print("Press Ctrl+C to exit")
+	<-stop
+
+	log.Print("Removing commands...")
+	// We need to fetch the commands, since deleting requires the command ID.
+	// We are doing this from the returned commands on line 375, because using
+	// this will delete all the commands, which might not be desirable, so we
+	// are deleting only the commands that we added.
+	// registeredCommands, err := s.ApplicationCommands(s.State.User.ID, *GuildID)
+	// if err != nil {
+	// 	log.Fatalf("Could not fetch registered commands: %v", err)
+	// }
+
+	for _, v := range registeredCommands {
+		err := s.ApplicationCommandDelete(s.State.User.ID, os.Getenv("SERVER_ID"), v.ID)
+		if err != nil {
+			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+		}
 	}
+
+	log.Print("Gracefully shutting down.")
 }
