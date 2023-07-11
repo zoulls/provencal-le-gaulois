@@ -629,12 +629,13 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 			log.Printf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
 
 			if tweetsNb > 0 {
-				// retrieve tweet id for next schedule
+				// retrieve the most recent tweet id for next schedule
 				sinceId = strconv.FormatInt(tweetsList[0].Id, 10)
 
-				for _, tweet := range tweetsList {
+				// the most recent tweet being first, the loop is done in the descending direction
+				for idx := tweetsNb - 1; idx >= 0; idx-- {
 					// generate twitter url
-					tUrl := utils.URLFromTweet(tweet)
+					tUrl := utils.URLFromTweet(tweetsList[idx])
 					// send message
 					_, err := s.ChannelMessageSend(channelID, tUrl)
 					if err != nil {
