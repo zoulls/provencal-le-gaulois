@@ -62,6 +62,18 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 			},
 		},
 		{
+			Name:        "debug",
+			Description: "Active or not debug logs",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "enable",
+					Description: "Enable debug logs",
+					Required:    true,
+				},
+			},
+		},
+		{
 			Name:        "delete",
 			Description: "Delete messages",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -166,6 +178,12 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			list(s, i)
 			log.Debugf("End cmd %s", cmdName)
 		},
+		"debug": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "debug"
+			log.Debugf("Received cmd %s", cmdName)
+			debug(s, i)
+			log.Debugf("End cmd %s", cmdName)
+		},
 		"delete": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "delete"
 			log.Debugf("Received cmd %s", cmdName)
@@ -221,6 +239,26 @@ func uptime(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		Data: &discordgo.InteractionResponseData{
 			Flags:   discordgo.MessageFlagsEphemeral,
 			Content: "uptime: " + time.Since(opt.LaunchTime).String(),
+		},
+	})
+	if err != nil {
+		log.With("err", err).Error("send error message")
+	}
+}
+
+func debug(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	active := i.ApplicationCommandData().Options[0].BoolValue()
+	if active {
+		log.SetLevel(log.ParseLevel("debug"))
+	} else {
+		log.SetLevel(log.ParseLevel("info"))
+	}
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Content: "debug: " + fmt.Sprint(active),
 		},
 	})
 	if err != nil {
