@@ -2,13 +2,13 @@ package event
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/charmbracelet/log"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
@@ -153,7 +153,7 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 
 			eventTimers[eventType].Next, err = utils.UnixStringToTime(tsNext)
 			if err != nil {
-				log.Printf("Error during ParseTimerMsg for next event type %d ts, err: %s", eventType, err)
+				log.Errorf("Error during ParseTimerMsg for next event type %d ts, err: %s", eventType, err)
 			}
 		}
 	}
@@ -165,7 +165,7 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 
 			eventTimers[eventType].Latest, err = utils.UnixStringToTime(tsLatest)
 			if err != nil {
-				log.Printf("Error during ParseTimerMsg for latest event type %d ts, err: %s", eventType, err)
+				log.Errorf("Error during ParseTimerMsg for latest event type %d ts, err: %s", eventType, err)
 			}
 		}
 	}
