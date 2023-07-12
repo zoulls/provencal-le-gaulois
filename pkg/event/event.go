@@ -15,7 +15,7 @@ import (
 
 const NextEventStr = "Next event"
 const LatestEventStr = "Latest event"
-const ActiveStr = "Ending"
+const ActiveStr = ":fire: Ending"
 const NAEventStr = "NA"
 
 // iota number and EventsName array need to have the same order
@@ -95,7 +95,7 @@ func TimerMsg(eventTimers []*EventTimer, newEvent []bool) discordgo.MessageEmbed
 		}
 
 		latestField := discordgo.MessageEmbedField{
-			Name:   eTimer.Name,
+			Name:   fmt.Sprintf("-- %s --", eTimer.Name),
 			Value:  msgLatest,
 			Inline: false,
 		}
@@ -118,7 +118,11 @@ func TimerMsg(eventTimers []*EventTimer, newEvent []bool) discordgo.MessageEmbed
 	}
 
 	return discordgo.MessageEmbed{
-		Title:  "Diablo 4 Event timer",
+		Title: ":timer: Events timer :timer:",
+		Color: 0xff0000,
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://i.imgur.com/lXhXQzM.png",
+		},
 		Fields: fields,
 	}
 }
