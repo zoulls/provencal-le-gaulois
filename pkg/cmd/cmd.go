@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
+	"github.com/charmbracelet/log"
 	"github.com/robfig/cron/v3"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/event"
@@ -143,45 +144,45 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 	return map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option){
 		"placeholder": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "placeholder"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			placeholder(s, i)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"uptime": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "uptime"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			uptime(s, i, opt)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"version": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "version"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			version(s, i, opt)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"list": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "list"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			list(s, i)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"delete": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "delete"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			delete(s, i)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"d4event": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "d4event"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			d4Event(s, i, opt)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 		"twitter": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "twitter"
-			log.Printf("Received cmd %s", cmdName)
+			log.Debugf("Received cmd %s", cmdName)
 			twitter(s, i, opt)
-			log.Printf("End cmd %s", cmdName)
+			log.Debugf("End cmd %s", cmdName)
 		},
 	}
 }
@@ -189,7 +190,7 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	_, err := s.ChannelMessageSend(i.ChannelID, "placeholder")
 	if err != nil {
-		log.Print(err.Error())
+		log.With("err", err).Error("send placeholder message")
 		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -198,7 +199,7 @@ func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 		if err != nil {
-			log.Print(err.Error())
+			log.With("err", err).Error("send error message")
 		}
 	}
 
@@ -210,18 +211,21 @@ func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Print(err.Error())
+		log.With("err", err).Error("send error message")
 	}
 }
 
 func uptime(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags:   discordgo.MessageFlagsEphemeral,
 			Content: "uptime: " + time.Since(opt.LaunchTime).String(),
 		},
 	})
+	if err != nil {
+		log.With("err", err).Error("send error message")
+	}
 }
 
 func version(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
@@ -250,26 +254,32 @@ func version(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		},
 	})
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags:  discordgo.MessageFlagsEphemeral,
 			Embeds: embedsMsg,
 		},
 	})
+	if err != nil {
+		log.With("err", err).Error("send error message")
+	}
 }
 
 func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	amount := i.ApplicationCommandData().Options[0].IntValue()
 	messageList, err := message.List(s, i.ChannelID, int(amount), "", "", "")
 	if err != nil {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Flags:   discordgo.MessageFlagsEphemeral,
 				Content: err.Error(),
 			},
 		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
 		return
 	}
 
@@ -294,7 +304,7 @@ func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		embedsMsg = append(embedsMsg, &msgEmb)
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			// Note: this isn't documented, but you can use that if you want to.
@@ -304,39 +314,45 @@ func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Embeds: embedsMsg,
 		},
 	})
+	if err != nil {
+		log.With("err", err).Error("send discord embed message")
+	}
 }
 
 func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Access options in the order provided by the user.
-	options := i.ApplicationCommandData().Options
+	optionsParam := i.ApplicationCommandData().Options
 	// Convert option slice into a map
 	var (
 		amount   int
 		beforeID string
 		afterID  string
 	)
-	for _, opt := range options {
-		switch opt.Name {
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
 		case "amount":
-			amount = int(opt.IntValue())
+			amount = int(optParam.IntValue())
 		case "before-url":
-			bURL := strings.Split(opt.StringValue(), "/")
+			bURL := strings.Split(optParam.StringValue(), "/")
 			beforeID = bURL[len(bURL)-1]
 		case "after-url":
-			aURL := strings.Split(opt.StringValue(), "/")
+			aURL := strings.Split(optParam.StringValue(), "/")
 			afterID = aURL[len(aURL)-1]
 		}
 	}
 
 	messageList, err := message.List(s, i.ChannelID, amount, beforeID, afterID, "")
 	if err != nil {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Flags:   discordgo.MessageFlagsEphemeral,
 				Content: err.Error(),
 			},
 		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
 		return
 	}
 
@@ -348,16 +364,7 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		errMsg := "Error, can't send messages"
-		log.Print(errMsg)
-
-		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: &errMsg,
-		})
-		if err != nil {
-			log.Print(err.Error())
-		}
-
+		log.With("err", err).Error("send discord loading message")
 		return
 	}
 
@@ -366,15 +373,17 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		err = s.ChannelMessageDelete(msg.ChannelID, msg.ID)
 		if err != nil {
 			failed = true
-			errMsg := fmt.Sprintf("Error, can't delete messages with ID, %s", msg.ID)
-			log.Print(errMsg)
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			log.With("msgID", msg.ID, "err", err).Error("can't delete message")
+			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Flags:   discordgo.MessageFlagsEphemeral,
-					Content: errMsg,
+					Content: fmt.Sprintf("can't delete message ID %s", msg.ID),
 				},
 			})
+			if err != nil {
+				log.With("err", err).Error("send error message")
+			}
 		}
 	}
 
@@ -386,17 +395,17 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Content: &msg,
 	})
 	if err != nil {
-		log.Print(err.Error())
+		log.With("err", err).Error("send error message")
 	}
 }
 
-func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Option) {
+func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	// Author ID of D4 tracker
 	authorID := "1116956812432904323"
 	durationStr := fmt.Sprintf("@every %dm", i.ApplicationCommandData().Options[0].IntValue())
 
 	// Access options in the order provided by the user.
-	options := i.ApplicationCommandData().Options
+	optionsParam := i.ApplicationCommandData().Options
 	channelID := i.ChannelID
 	// Convert option slice into a map
 	var (
@@ -404,16 +413,16 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 		eventMessageId string
 	)
 
-	for _, opt := range options {
-		switch opt.Name {
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
 		case "time":
-			duration = int(opt.IntValue())
+			duration = int(optParam.IntValue())
 		case "event-message-url":
-			eURL := strings.Split(opt.StringValue(), "/")
+			eURL := strings.Split(optParam.StringValue(), "/")
 			eventMessageId = eURL[len(eURL)-1]
 		case "author-id":
-			if len(opt.StringValue()) > 0 {
-				authorID = opt.StringValue()
+			if len(optParam.StringValue()) > 0 {
+				authorID = optParam.StringValue()
 			}
 		}
 	}
@@ -426,7 +435,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 		},
 	})
 	if err != nil {
-		log.Print(err.Error())
+		log.With("err", err).Error("send error message")
 	}
 
 	// Init event timer array
@@ -436,26 +445,33 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 		msgEmbed := event.TimerMsg(eventTimers, make([]bool, 3))
 		eventEmbedMsg, err := s.ChannelMessageSendEmbed(channelID, &msgEmbed)
 		if err != nil {
-			log.Printf("Error during send message, err: %s", err)
+			log.With("err", err).Error("send discord embed message")
 		}
 		eventMessageId = eventEmbedMsg.ID
 	} else {
 		eventMsg, err := s.ChannelMessage(i.ChannelID, eventMessageId)
 		if err != nil {
-			log.Printf("Error during Get event message on discord, err: %s", err)
+			log.With("err", err).Error("get event message on discord")
 		}
 		event.ParseTimerMsg(eventMsg, eventTimers)
 	}
 
-	_, err = optEvent.Cron.AddFunc(
+	// Config special logger for cron goroutine
+	d4Logger := log.NewWithOptions(os.Stderr, log.Options{
+		Level:           log.GetLevel(),
+		Prefix:          "D4Events",
+		ReportTimestamp: true,
+	})
+
+	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			log.Print("Check D4 events")
+			d4Logger.Debug("Check D4 events")
 			newEvent := make([]bool, 3)
 
 			messageList, err := message.List(s, i.ChannelID, 10, "", "", "")
 			if err != nil {
-				log.Printf("Error during list message, err: %s", err)
+				d4Logger.With("err", err).Error("list message")
 			}
 
 			for _, msg := range messageList {
@@ -470,7 +486,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 						ts := found[1]
 						err := eventTimers[event.EventWB].SetNextTimestamp(ts)
 						if err != nil {
-							log.Printf("Error during SetNextTimestamp, err: %s", err)
+							d4Logger.With("err", err).Error("SetNextTimestamp")
 						}
 						newEvent[event.EventWB] = true
 
@@ -484,7 +500,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 						ts := found[1]
 						err := eventTimers[event.EventHelltide].SetNextTimestamp(ts)
 						if err != nil {
-							log.Printf("Error during SetNextTimestamp, err: %s", err)
+							d4Logger.With("err", err).Error("SetNextTimestamp")
 						}
 
 						newEvent[event.EventHelltide] = true
@@ -499,7 +515,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 						ts := found[1]
 						err := eventTimers[event.EventLegions].SetNextTimestamp(ts)
 						if err != nil {
-							log.Printf("Error during SetNextTimestamp, err: %s", err)
+							d4Logger.With("err", err).Error("SetNextTimestamp")
 						}
 						newEvent[event.EventLegions] = true
 
@@ -514,13 +530,13 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 
 					if deleteMsg {
 						logMsg += "Delete"
-						err := s.ChannelMessageDelete(msg.ChannelID, msg.ID)
+						err = s.ChannelMessageDelete(msg.ChannelID, msg.ID)
 						if err != nil {
-							log.Printf("Error during ChannelMessageDelete, err: %s", err)
+							d4Logger.With("err", err).Error("delete discord message")
 						}
 					}
 
-					log.Printf("%s, authorName: %s, authorID: %s, message: %s", logMsg, msg.Author.Username, msg.Author.ID, msg.Content)
+					d4Logger.With("authorName", msg.Author.Username, "authorID", msg.Author.ID, "message", msg.Content).Debug(logMsg)
 				}
 			}
 
@@ -529,22 +545,22 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 			msgEmbed := event.TimerMsg(eventTimers, newEvent)
 			_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
 			if err != nil {
-				log.Printf("Error during send message, err: %s", err)
+				d4Logger.With("err", err).Error("send embed message")
 			}
 
-			log.Print("Check D4 events done")
+			d4Logger.Debug("Check D4 events done")
 		})
 	if err != nil {
-		log.Printf("Error, during cron creation with err: %s", err.Error())
+		log.With("err", err).Error("D4 events cron creation")
 	}
-	optEvent.Cron.Start()
+	opt.Cron.Start()
 
-	log.Printf("Init cron schedule to check event diablo IV every %d minutes", duration)
+	log.Infof("Init cron schedule to check event diablo IV every %d minutes", duration)
 }
 
-func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Option) {
+func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	// Access options in the order provided by the user.
-	options := i.ApplicationCommandData().Options
+	optionsParam := i.ApplicationCommandData().Options
 
 	// init channel id for go routine
 	channelID := i.ChannelID
@@ -558,14 +574,14 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 		sinceId   string
 	)
 
-	for _, opt := range options {
-		switch opt.Name {
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
 		case "time":
-			duration = int(opt.IntValue())
+			duration = int(optParam.IntValue())
 		case "list-id":
-			listIdStr = opt.StringValue()
+			listIdStr = optParam.StringValue()
 		case "since-id":
-			sinceId = opt.StringValue()
+			sinceId = optParam.StringValue()
 		}
 	}
 
@@ -575,28 +591,34 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 	// listId conversion
 	listId, err := strconv.ParseInt(listIdStr, 10, 64)
 	if err != nil {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		log.With("err", err).Error("listId conversion")
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Flags:   discordgo.MessageFlagsEphemeral,
 				Content: err.Error(),
 			},
 		})
-		log.Printf("Error during listId conversion, err: %s", err.Error())
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
 		return
 	}
 
 	// Retrieve Twitter list data
-	tList, err := optEvent.TwitterClient.GetList(listId, url.Values{})
+	tList, err := opt.TwitterClient.GetList(listId, url.Values{})
 	if err != nil {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		log.With("err", err).Error("retrieve Twitter list data")
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Flags:   discordgo.MessageFlagsEphemeral,
 				Content: err.Error(),
 			},
 		})
-		log.Printf("Error during retrieve Twitter list data, err: %s", err.Error())
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
 		return
 	}
 	listName = tList.Name
@@ -609,24 +631,31 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 		},
 	})
 	if err != nil {
-		log.Print(err.Error())
+		log.With("err", err).Error("send error message")
 	}
 
-	_, err = optEvent.Cron.AddFunc(
+	// Config special logger for cron goroutine
+	twitterLogger := log.NewWithOptions(os.Stderr, log.Options{
+		Level:           log.GetLevel(),
+		Prefix:          "Twitter",
+		ReportTimestamp: true,
+	})
+
+	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			log.Printf("Check tweetsList %s (%d)", listName, listId)
+			twitterLogger.Debugf("Check tweetsList %s (%d)", listName, listId)
 
 			v := url.Values{}
 			v.Set("since_id", sinceId)
 
-			tweetsList, err := optEvent.TwitterClient.GetListTweets(listId, false, v)
+			tweetsList, err := opt.TwitterClient.GetListTweets(listId, false, v)
 			if err != nil {
-				log.Print(err.Error())
+				twitterLogger.With("err", err).Error("GetListTweets")
 			}
 
 			tweetsNb := len(tweetsList)
-			log.Printf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
+			twitterLogger.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
 
 			if tweetsNb > 0 {
 				// retrieve the most recent tweet id for next schedule
@@ -639,17 +668,17 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, optEvent Opti
 					// send message
 					_, err := s.ChannelMessageSend(channelID, tUrl)
 					if err != nil {
-						log.Print(err.Error())
+						twitterLogger.With("err", err).Error("send error message")
 					}
 				}
 			}
 
-			log.Printf("Check tweetsList %s (%d) done", listName, listId)
+			twitterLogger.Debugf("Check tweetsList %s (%d) done", listName, listId)
 		})
 	if err != nil {
-		log.Printf("Error, during cron creation with err: %s", err.Error())
+		log.With("err", err).Error("Twitter cron creation")
 	}
-	optEvent.Cron.Start()
+	opt.Cron.Start()
 
-	log.Printf("Init cron schedule to check tweets every %d minutes for the list %s (%d)", duration, listName, listId)
+	log.Infof("Init cron schedule to check tweets every %d minutes for the list %s (%d)", duration, listName, listId)
 }
