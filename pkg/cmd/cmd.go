@@ -116,11 +116,6 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Name:        "event-message-url",
 					Description: "Message URL to put event timer summary",
 				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "author-id",
-					Description: "Author ID message to check",
-				},
 			},
 		},
 		{
@@ -439,7 +434,6 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	// Author ID of D4 tracker
-	authorID := "1116956812432904323"
 	durationStr := fmt.Sprintf("@every %dm", i.ApplicationCommandData().Options[0].IntValue())
 
 	// Access options in the order provided by the user.
@@ -458,10 +452,6 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		case "event-message-url":
 			eURL := strings.Split(optParam.StringValue(), "/")
 			eventMessageId = eURL[len(eURL)-1]
-		case "author-id":
-			if len(optParam.StringValue()) > 0 {
-				authorID = optParam.StringValue()
-			}
 		}
 	}
 
@@ -507,78 +497,10 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			d4Logger.Debug("Check D4 events")
 			newEvent := make([]bool, 3)
 
-			messageList, err := message.List(s, i.ChannelID, 10, "", "", "")
+			eventTimers, err = event.RefreshEventTimers(eventTimers)
 			if err != nil {
-				d4Logger.With("err", err).Error("list message")
+				d4Logger.With("err", err).Error("refresh event timers")
 			}
-
-			for _, msg := range messageList {
-				var deleteMsg bool
-				if msg.Author.ID == authorID {
-					logMsg := "type: "
-					switch {
-					case strings.Contains(msg.Content, event.EventsName[event.EventWB]):
-						logMsg += event.EventsName[event.EventWB]
-
-						found := event.RegDiscordTime.FindStringSubmatch(msg.Content)
-						ts := found[1]
-						err := eventTimers[event.EventWB].SetNextTimestamp(ts)
-						if err != nil {
-							d4Logger.With("err", err).Error("SetNextTimestamp")
-						}
-						newEvent[event.EventWB] = true
-
-						if eventTimers[event.EventWB].Next.Before(time.Now()) {
-							deleteMsg = true
-						}
-					case strings.Contains(msg.Content, event.EventsName[event.EventHelltide]):
-						logMsg += event.EventsName[event.EventHelltide]
-
-						found := event.RegDiscordTime.FindStringSubmatch(msg.Content)
-						ts := found[1]
-						err := eventTimers[event.EventHelltide].SetNextTimestamp(ts)
-						if err != nil {
-							d4Logger.With("err", err).Error("SetNextTimestamp")
-						}
-
-						newEvent[event.EventHelltide] = true
-
-						if eventTimers[event.EventHelltide].Next.Before(time.Now()) {
-							deleteMsg = true
-						}
-					case strings.Contains(msg.Content, event.EventsName[event.EventLegions]):
-						logMsg += event.EventsName[event.EventLegions]
-
-						found := event.RegDiscordTime.FindStringSubmatch(msg.Content)
-						ts := found[1]
-						err := eventTimers[event.EventLegions].SetNextTimestamp(ts)
-						if err != nil {
-							d4Logger.With("err", err).Error("SetNextTimestamp")
-						}
-						newEvent[event.EventLegions] = true
-
-						if eventTimers[event.EventLegions].Next.Before(time.Now()) {
-							deleteMsg = true
-						}
-					case strings.EqualFold(msg.Content, "[Original Message Deleted]"):
-						deleteMsg = true
-					default:
-						logMsg += "Other"
-					}
-
-					if deleteMsg {
-						logMsg += "Delete"
-						err = s.ChannelMessageDelete(msg.ChannelID, msg.ID)
-						if err != nil {
-							d4Logger.With("err", err).Error("delete discord message")
-						}
-					}
-
-					d4Logger.With("authorName", msg.Author.Username, "authorID", msg.Author.ID, "message", msg.Content).Debug(logMsg)
-				}
-			}
-
-			event.RefreshEventTimers(eventTimers, newEvent)
 
 			msgEmbed := event.TimerMsg(eventTimers, newEvent)
 			_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
