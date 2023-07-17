@@ -124,6 +124,10 @@ func TimerMsg(eventTimers []*EventTimer, newEvent []bool) discordgo.MessageEmbed
 			URL: "https://i.imgur.com/lXhXQzM.png",
 		},
 		Fields: fields,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text:    "Event timers from d4armory.io",
+			IconURL: "https://i.imgur.com/JSbhnHQ.png",
+		},
 	}
 }
 
@@ -171,20 +175,27 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 	}
 }
 
-func RefreshEventTimers(eventTimers []*EventTimer, newEvent []bool) {
+func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
+	// Get data from d4armory.io
+	data, err := getD4EventData()
+	if err != nil {
+		return eventTimers, err
+	}
+
+	// Convert D4armoryData to EventTimer
 	for k, eTimer := range eventTimers {
-		if !eTimer.Next.IsZero() && eTimer.Next.Before(time.Now()) && newEvent[k] {
-			eTimer.Latest = eTimer.Next
-
-			switch k {
-			case EventWB:
-				eTimer.Next = eTimer.Next.Add(5 * time.Hour)
-			case EventHelltide:
-				eTimer.Next = eTimer.Next.Add(1*time.Hour + 15*time.Minute)
-			case EventLegions:
-				eTimer.Next = eTimer.Next.Add(30 * time.Minute)
-			}
-
+		switch k {
+		case EventWB:
+			eTimer.Latest = time.Unix(int64(data.Boss.Timestamp), 0)
+			eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
+		case EventHelltide:
+			eTimer.Latest = time.Unix(int64(data.Helltide.Timestamp), 0)
+			eTimer.Next = eTimer.Latest.Add(time.Hour*2 + time.Minute*15)
+		case EventLegions:
+			eTimer.Latest = time.Unix(int64(data.Legion.Timestamp), 0)
+			eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
 		}
 	}
+
+	return eventTimers, err
 }
