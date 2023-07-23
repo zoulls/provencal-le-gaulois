@@ -249,8 +249,10 @@ func debug(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	active := i.ApplicationCommandData().Options[0].BoolValue()
 	if active {
 		log.SetLevel(log.ParseLevel("debug"))
+		log.Info("enable debug log")
 	} else {
 		log.SetLevel(log.ParseLevel("info"))
+		log.Info("disable debug log")
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
