@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -115,6 +114,11 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "event-message-url",
 					Description: "Message URL to put event timer summary",
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "helltide-active",
+					Description: "Active Helltide for timer init",
 				},
 			},
 		},
@@ -443,6 +447,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	var (
 		duration       int
 		eventMessageId string
+		activeHelltide bool
 	)
 
 	for _, optParam := range optionsParam {
@@ -452,6 +457,8 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		case "event-message-url":
 			eURL := strings.Split(optParam.StringValue(), "/")
 			eventMessageId = eURL[len(eURL)-1]
+		case "helltide-active":
+			activeHelltide = optParam.BoolValue()
 		}
 	}
 
@@ -467,48 +474,58 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	}
 
 	// Init event timer array
-	eventTimers := event.EvenTimerInit()
+	eventTimers := event.InitEventTimer()
 
 	if len(eventMessageId) == 0 {
-		msgEmbed := event.TimerMsg(eventTimers, make([]bool, 3))
+		// create event timer msg
+		msgEmbed := event.TimerMsg(eventTimers)
+		// create event timer msg in discord
 		eventEmbedMsg, err := s.ChannelMessageSendEmbed(channelID, &msgEmbed)
 		if err != nil {
 			log.With("err", err).Error("send discord embed message")
 		}
 		eventMessageId = eventEmbedMsg.ID
 	} else {
+		// retrieve discord event timer msg
 		eventMsg, err := s.ChannelMessage(i.ChannelID, eventMessageId)
 		if err != nil {
 			log.With("err", err).Error("get event message on discord")
 		}
-		event.ParseTimerMsg(eventMsg, eventTimers)
+		// parse date from event timer msg
+		eventTimers = event.ParseTimerMsg(eventMsg, eventTimers)
 	}
 
-	// Config special logger for cron goroutine
-	d4Logger := log.NewWithOptions(os.Stderr, log.Options{
-		Level:           log.GetLevel(),
-		Prefix:          "D4Events",
-		ReportTimestamp: true,
-	})
+	// Update data timer with d4armory.io
+	eventTimers, err = event.PopulateEventTimer(eventTimers, activeHelltide)
+	if err != nil {
+		log.With("err", err).Error("populate event timer")
+	}
+
+	// create event timer discord msg
+	msgEmbed := event.TimerMsg(eventTimers)
+	// Update event timer msg on discord
+	_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
+	if err != nil {
+		log.With("err", err).Error("edit embed message")
+	}
 
 	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			d4Logger.Debug("Check D4 events")
-			newEvent := make([]bool, 3)
+			log.Debug("Check D4 events")
 
 			eventTimers, err = event.RefreshEventTimers(eventTimers)
 			if err != nil {
-				d4Logger.With("err", err).Error("refresh event timers")
+				log.With("err", err).Error("refresh event timers")
 			}
 
-			msgEmbed := event.TimerMsg(eventTimers, newEvent)
+			msgEmbed := event.TimerMsg(eventTimers)
 			_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
 			if err != nil {
-				d4Logger.With("err", err).Error("send embed message")
+				log.With("err", err).Error("edit embed message")
 			}
 
-			d4Logger.Debug("Check D4 events done")
+			log.Debug("Check D4 events done")
 		})
 	if err != nil {
 		log.With("err", err).Error("D4 events cron creation")
@@ -594,28 +611,21 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		log.With("err", err).Error("send error message")
 	}
 
-	// Config special logger for cron goroutine
-	twitterLogger := log.NewWithOptions(os.Stderr, log.Options{
-		Level:           log.GetLevel(),
-		Prefix:          "Twitter",
-		ReportTimestamp: true,
-	})
-
 	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			twitterLogger.Debugf("Check tweetsList %s (%d)", listName, listId)
+			log.Debugf("Check tweetsList %s (%d)", listName, listId)
 
 			v := url.Values{}
 			v.Set("since_id", sinceId)
 
 			tweetsList, err := opt.TwitterClient.GetListTweets(listId, false, v)
 			if err != nil {
-				twitterLogger.With("err", err).Error("GetListTweets")
+				log.With("err", err).Error("GetListTweets")
 			}
 
 			tweetsNb := len(tweetsList)
-			twitterLogger.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
+			log.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
 
 			if tweetsNb > 0 {
 				// retrieve the most recent tweet id for next schedule
@@ -628,12 +638,12 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 					// send message
 					_, err := s.ChannelMessageSend(channelID, tUrl)
 					if err != nil {
-						twitterLogger.With("err", err).Error("send error message")
+						log.With("err", err).Error("send error message")
 					}
 				}
 			}
 
-			twitterLogger.Debugf("Check tweetsList %s (%d) done", listName, listId)
+			log.Debugf("Check tweetsList %s (%d) done", listName, listId)
 		})
 	if err != nil {
 		log.With("err", err).Error("Twitter cron creation")

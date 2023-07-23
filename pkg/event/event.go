@@ -18,6 +18,9 @@ const LatestEventStr = "Latest event"
 const ActiveStr = ":fire: Ending"
 const NAEventStr = "NA"
 
+const ActiveHelltideTimer = time.Hour
+const NormalHelltideTimer = time.Hour*2 + time.Minute*15
+
 // iota number and EventsName array need to have the same order
 const (
 	EventWB = iota
@@ -33,23 +36,55 @@ type EventTimer struct {
 	Name   string
 	Latest time.Time
 	Next   time.Time
+	Active bool
 }
 
 func init() {
 	RegDiscordTime, _ = regexp.Compile("<t:([0-9]*):R>")
 }
 
-func EvenTimerInit() []*EventTimer {
+func InitEventTimer() []*EventTimer {
 	eventTimers := make([]*EventTimer, 3)
 	for k, name := range EventsName {
 		eventTimers[k] = &EventTimer{
 			Name:   name,
 			Latest: time.Time{},
 			Next:   time.Time{},
+			Active: false,
 		}
 	}
 
 	return eventTimers
+}
+
+func PopulateEventTimer(eventTimers []*EventTimer, activeHelltide bool) ([]*EventTimer, error) {
+	// Get data from d4armory.io only if a next timer expire
+	data, err := getD4EventData()
+	if err != nil {
+		return eventTimers, err
+	}
+
+	for k, eTimer := range eventTimers {
+		switch k {
+		case EventWB:
+			eTimer.Latest = time.Unix(int64(data.Boss.Timestamp), 0)
+			eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
+		case EventHelltide:
+			eTimer.Active = activeHelltide
+			eTimer.Latest = time.Unix(int64(data.Helltide.Timestamp), 0)
+
+			nTimer := eTimer.Latest.Add(NormalHelltideTimer)
+			if eTimer.Active {
+				nTimer = eTimer.Latest.Add(ActiveHelltideTimer)
+			}
+			eTimer.Next = nTimer
+		case EventLegions:
+			eTimer.Latest = time.Unix(int64(data.Legion.Timestamp), 0)
+			eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
+		}
+	}
+
+	return eventTimers, err
 }
 
 func (et *EventTimer) SetNext(next time.Time) {
@@ -82,7 +117,7 @@ func (et *EventTimer) GetLatestTimestamp() string {
 	return strconv.Itoa(int(et.Latest.Unix()))
 }
 
-func TimerMsg(eventTimers []*EventTimer, newEvent []bool) discordgo.MessageEmbed {
+func TimerMsg(eventTimers []*EventTimer) discordgo.MessageEmbed {
 	var fields []*discordgo.MessageEmbedField
 	for k, eTimer := range eventTimers {
 		msgNext := NextEventStr + " "
@@ -103,7 +138,7 @@ func TimerMsg(eventTimers []*EventTimer, newEvent []bool) discordgo.MessageEmbed
 		if eTimer.Next.IsZero() {
 			msgNext += "NA"
 		} else {
-			if k == EventHelltide && newEvent[EventHelltide] {
+			if k == EventHelltide && eventTimers[EventHelltide].Active {
 				msgNext = ActiveStr + " "
 			}
 			msgNext += fmt.Sprintf("<t:%s:R>", eTimer.GetNextTimestamp())
@@ -176,24 +211,50 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 }
 
 func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
-	// Get data from d4armory.io
-	data, err := getD4EventData()
-	if err != nil {
-		return eventTimers, err
-	}
+	// Init local value
+	now := time.Now()
+	var getData bool
+	var data *d4armoryData
+	var err error
 
 	// Convert D4armoryData to EventTimer
 	for k, eTimer := range eventTimers {
-		switch k {
-		case EventWB:
-			eTimer.Latest = time.Unix(int64(data.Boss.Timestamp), 0)
-			eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
-		case EventHelltide:
-			eTimer.Latest = time.Unix(int64(data.Helltide.Timestamp), 0)
-			eTimer.Next = eTimer.Latest.Add(time.Hour*2 + time.Minute*15)
-		case EventLegions:
-			eTimer.Latest = time.Unix(int64(data.Legion.Timestamp), 0)
-			eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
+		// check if a next timer is expired
+		if eTimer.Next.Before(now) || eTimer.Next.Equal(now) {
+
+			if !getData {
+				// Get data from d4armory.io only if a next timer expire
+				data, err = getD4EventData()
+				if err != nil {
+					return eventTimers, err
+				}
+				getData = true
+			}
+
+			switch k {
+			case EventWB:
+				eTimer.Latest = eTimer.Next
+				eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
+			case EventHelltide:
+				// only store next event if not active (next time will be active timer)
+				if !eTimer.Active {
+					eTimer.Latest = eTimer.Next
+				}
+
+				// toggle active boolean
+				eTimer.Active = !eTimer.Active
+
+				// init to normal timer
+				nTimer := eTimer.Latest.Add(NormalHelltideTimer)
+				if eTimer.Active {
+					// if active change for active timer
+					nTimer = eTimer.Latest.Add(ActiveHelltideTimer)
+				}
+				eTimer.Next = nTimer
+			case EventLegions:
+				eTimer.Latest = eTimer.Next
+				eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/json"
+	"github.com/charmbracelet/log"
 	"io"
 	"net/http"
 )
@@ -40,6 +41,7 @@ type Whispers struct {
 }
 
 func getD4EventData() (*d4armoryData, error) {
+	log.Debugf("call d4armory.io API")
 	// Get request
 	resp, err := http.Get("https://d4armory.io/api/events/recent")
 	if err != nil {
