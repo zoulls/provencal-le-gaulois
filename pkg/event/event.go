@@ -219,8 +219,11 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 
 	// Convert D4armoryData to EventTimer
 	for k, eTimer := range eventTimers {
-		// check if a next timer is expired
-		if eTimer.Next.Before(now) || eTimer.Next.Equal(now) {
+		// retrieve diff time between now and next timer
+		diff := now.Sub(eTimer.Next)
+		// check if a next timer is before 4 minutes or expired
+		if diff.Minutes() <= 4 {
+			log.Debugf("refresh timer event %s", eTimer.Name)
 
 			if !getData {
 				// Get data from d4armory.io only if a next timer expire
