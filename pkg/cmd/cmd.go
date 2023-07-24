@@ -155,51 +155,51 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 	return map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option){
 		"placeholder": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "placeholder"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			placeholder(s, i)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"uptime": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "uptime"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			uptime(s, i, opt)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"version": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "version"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			version(s, i, opt)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"list": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "list"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			list(s, i)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"debug": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "debug"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			debug(s, i)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"delete": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "delete"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			delete(s, i)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"d4event": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "d4event"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			d4Event(s, i, opt)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 		"twitter": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "twitter"
-			log.Debugf("Received cmd %s", cmdName)
+			log.Debugf("received cmd %s", cmdName)
 			twitter(s, i, opt)
-			log.Debugf("End cmd %s", cmdName)
+			log.Debugf("end cmd %s", cmdName)
 		},
 	}
 }
@@ -514,7 +514,7 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			log.Debug("Check D4 events")
+			log.Debug("check D4 events")
 
 			eventTimers, err = event.RefreshEventTimers(eventTimers)
 			if err != nil {
@@ -527,14 +527,14 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 				log.With("err", err).Error("edit embed message")
 			}
 
-			log.Debug("Check D4 events done")
+			log.Debug("check D4 events done")
 		})
 	if err != nil {
 		log.With("err", err).Error("D4 events cron creation")
 	}
 	opt.Cron.Start()
 
-	log.Infof("Init cron schedule to check event diablo IV every %d minutes", duration)
+	log.Infof("init cron schedule to check event diablo IV every %d minutes", duration)
 }
 
 func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
@@ -616,7 +616,7 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	_, err = opt.Cron.AddFunc(
 		durationStr,
 		func() {
-			log.Debugf("Check tweetsList %s (%d)", listName, listId)
+			log.Debugf("check tweetsList %s (%d)", listName, listId)
 
 			v := url.Values{}
 			v.Set("since_id", sinceId)
@@ -645,12 +645,12 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 				}
 			}
 
-			log.Debugf("Check tweetsList %s (%d) done", listName, listId)
+			log.Debugf("check tweetsList %s (%d) done", listName, listId)
 		})
 	if err != nil {
 		log.With("err", err).Error("Twitter cron creation")
 	}
 	opt.Cron.Start()
 
-	log.Infof("Init cron schedule to check tweets every %d minutes for the list %s (%d)", duration, listName, listId)
+	log.Infof("init cron schedule to check tweets every %d minutes for the list %s (%d)", duration, listName, listId)
 }
