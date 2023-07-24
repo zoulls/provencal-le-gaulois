@@ -88,14 +88,14 @@ func main() {
 	log.Infof("env: %s", os.Getenv("BOT_ENV"))
 
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Infof("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+		log.Infof("logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 	err := s.Open()
 	if err != nil {
-		log.Fatalf("Cannot open the session: %v", err)
+		log.With("err", err).Fatal("cannot open the session")
 	}
 
-	log.Info("Adding commands...")
+	log.Info("adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
 		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, os.Getenv("SERVER_ID"), v)
@@ -113,10 +113,10 @@ func main() {
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	log.Info("Press Ctrl+C to exit")
+	log.Info("press Ctrl+C to exit")
 	<-stop
 
-	log.Info("Removing commands...")
+	log.Info("removing commands...")
 	// We need to fetch the commands, since deleting requires the command ID.
 	// We are doing this from the returned commands on line 375, because using
 	// this will delete all the commands, which might not be desirable, so we
@@ -133,5 +133,5 @@ func main() {
 		}
 	}
 
-	log.Info("Gracefully shutting down.")
+	log.Info("gracefully shutting down.")
 }

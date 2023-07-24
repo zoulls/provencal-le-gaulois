@@ -192,7 +192,7 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 
 			eventTimers[eventType].Next, err = utils.UnixStringToTime(tsNext)
 			if err != nil {
-				log.Errorf("Error during ParseTimerMsg for next event type %d ts, err: %s", eventType, err)
+				log.With("eventType", eventType, "err", err).Error("error during ParseTimerMsg for next event")
 			}
 		}
 	}
@@ -204,7 +204,7 @@ func parseField(fieldValue string, eventType int, eventTimers []*EventTimer) {
 
 			eventTimers[eventType].Latest, err = utils.UnixStringToTime(tsLatest)
 			if err != nil {
-				log.Errorf("Error during ParseTimerMsg for latest event type %d ts, err: %s", eventType, err)
+				log.With("eventType", eventType, "err", err).Error("error during ParseTimerMsg for latest event")
 			}
 		}
 	}
@@ -223,6 +223,21 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 		diff := now.Sub(eTimer.Next)
 		// check if a next timer is before 4 minutes or expired
 		if diff.Minutes() <= 4 {
+			log.Debugf("refresh next timer event %s", eTimer.Name)
+
+			switch k {
+			case EventWB:
+				eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
+			case EventHelltide:
+				eTimer.Next = time.Unix(int64(data.Helltide.Timestamp), 0)
+			case EventLegions:
+				eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
+			}
+
+		}
+
+		// check if a next timer is expired
+		if eTimer.Next.Before(now) || eTimer.Next.Equal(now) {
 			log.Debugf("refresh timer event %s", eTimer.Name)
 
 			if !getData {
