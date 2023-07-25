@@ -2,10 +2,16 @@ package event
 
 import (
 	"encoding/json"
-	"github.com/charmbracelet/log"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
+
+	"github.com/charmbracelet/log"
 )
+
+// Host API
+var Host string
 
 type d4armoryData struct {
 	Boss     Boss       `json:"boss,omitempty"`
@@ -40,10 +46,22 @@ type Whispers struct {
 	End   int `json:"end,omitempty"`
 }
 
+func InitHost() {
+	// Init host value
+	Host = os.Getenv("D4ARMORY_HOST")
+	mockHost := os.Getenv("MOCK_D4ARMORY_HOST")
+	if len(mockHost) > 0 {
+		Host = mockHost
+	}
+	log.Debugf("d4armory.io host %s", Host)
+}
+
 func getD4EventData() (*d4armoryData, error) {
 	log.Debugf("call d4armory.io API")
+	// build url
+	url := fmt.Sprintf("%s/api/events/recent", Host)
 	// Get request
-	resp, err := http.Get("https://d4armory.io/api/events/recent")
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}

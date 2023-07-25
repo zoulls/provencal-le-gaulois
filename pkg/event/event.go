@@ -17,6 +17,7 @@ const NextEventStr = "Next event"
 const LatestEventStr = "Latest event"
 const ActiveStr = ":fire: Ending"
 const NAEventStr = "NA"
+const SoonStr = ":rotating_light:"
 
 const ActiveHelltideTimer = time.Hour
 const NormalHelltideTimer = time.Hour*2 + time.Minute*15
@@ -37,6 +38,7 @@ type EventTimer struct {
 	Latest time.Time
 	Next   time.Time
 	Active bool
+	Soon   bool
 }
 
 func init() {
@@ -122,6 +124,8 @@ func TimerMsg(eventTimers []*EventTimer) discordgo.MessageEmbed {
 	for k, eTimer := range eventTimers {
 		msgNext := NextEventStr + " "
 		msgLatest := LatestEventStr + " "
+		prefix := ""
+		suffix := ""
 
 		if eTimer.Latest.IsZero() {
 			msgLatest += NAEventStr
@@ -139,9 +143,15 @@ func TimerMsg(eventTimers []*EventTimer) discordgo.MessageEmbed {
 			msgNext += "NA"
 		} else {
 			if k == EventHelltide && eventTimers[EventHelltide].Active {
+				// replace start msgNext
 				msgNext = ActiveStr + " "
 			}
-			msgNext += fmt.Sprintf("<t:%s:R>", eTimer.GetNextTimestamp())
+			if eTimer.Soon {
+				// redefine prefix and suffix
+				prefix = SoonStr + " "
+				suffix = " " + SoonStr
+			}
+			msgNext += fmt.Sprintf("%s<t:%s:R>%s", prefix, eTimer.GetNextTimestamp(), suffix)
 		}
 		nextField := discordgo.MessageEmbedField{
 			Name:   "",
@@ -220,10 +230,22 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 	// Convert D4armoryData to EventTimer
 	for k, eTimer := range eventTimers {
 		// retrieve diff time between now and next timer
-		diff := now.Sub(eTimer.Next)
+		diff := eTimer.Next.Sub(now)
 		// check if a next timer is before 4 minutes or expired
 		if diff.Minutes() <= 4 {
 			log.Debugf("refresh next timer event %s", eTimer.Name)
+
+			// soon flag
+			eTimer.Soon = true
+
+			if !getData {
+				// get data from d4armory.io only if a next timer expire
+				data, err = getD4EventData()
+				if err != nil {
+					return eventTimers, err
+				}
+				getData = true
+			}
 
 			switch k {
 			case EventWB:
@@ -240,14 +262,8 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 		if eTimer.Next.Before(now) || eTimer.Next.Equal(now) {
 			log.Debugf("refresh timer event %s", eTimer.Name)
 
-			if !getData {
-				// Get data from d4armory.io only if a next timer expire
-				data, err = getD4EventData()
-				if err != nil {
-					return eventTimers, err
-				}
-				getData = true
-			}
+			// reset soon flag
+			eTimer.Soon = false
 
 			switch k {
 			case EventWB:

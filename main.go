@@ -12,6 +12,7 @@ import (
 	cron "github.com/robfig/cron/v3"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/cmd"
+	"github.com/zoulls/provencal-le-gaulois/pkg/event"
 )
 
 var (
@@ -42,6 +43,9 @@ func init() {
 
 	// Init log level
 	log.SetLevel(log.ParseLevel(os.Getenv("LOG_LEVEL")))
+
+	// Init event host API
+	event.InitHost()
 
 	// Init discord session
 	s, err = discordgo.New("Bot " + os.Getenv("BOT_TOKEN"))
