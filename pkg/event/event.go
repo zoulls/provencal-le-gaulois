@@ -34,11 +34,12 @@ var EventsName = []string{"World Boss", "Helltide", "Legion"}
 var RegDiscordTime *regexp.Regexp
 
 type EventTimer struct {
-	Name   string
-	Latest time.Time
-	Next   time.Time
-	Active bool
-	Soon   bool
+	Name    string
+	Latest  time.Time
+	Next    time.Time
+	Active  bool
+	Soon    bool
+	Updated time.Time
 }
 
 func init() {
@@ -49,10 +50,7 @@ func InitEventTimer() []*EventTimer {
 	eventTimers := make([]*EventTimer, 3)
 	for k, name := range EventsName {
 		eventTimers[k] = &EventTimer{
-			Name:   name,
-			Latest: time.Time{},
-			Next:   time.Time{},
-			Active: false,
+			Name: name,
 		}
 	}
 
@@ -229,14 +227,13 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 
 	// Convert D4armoryData to EventTimer
 	for k, eTimer := range eventTimers {
+		refresh := false
 		// retrieve diff time between now and next timer
 		diff := eTimer.Next.Sub(now)
-		// check if a next timer is before 4 minutes or expired
-		if diff.Minutes() <= 4 {
-			log.Debugf("refresh next timer event %s", eTimer.Name)
 
-			// soon flag
-			eTimer.Soon = true
+		// refresh timer for WB and Legion before 10 minutes expire
+		if k != EventHelltide && diff.Minutes() <= 10 && diff.Minutes() > 0 {
+			log.Debugf("refresh next timer event %s", eTimer.Name)
 
 			if !getData {
 				// get data from d4armory.io only if a next timer expire
@@ -250,17 +247,35 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 			switch k {
 			case EventWB:
 				eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
-			case EventHelltide:
-				eTimer.Next = time.Unix(int64(data.Helltide.Timestamp), 0)
 			case EventLegions:
 				eTimer.Next = time.Unix(int64(data.Legion.Expected), 0)
 			}
 
+			refresh = true
+		}
+
+		if refresh {
+			// refresh diff with new next timer
+			diff = eTimer.Next.Sub(now)
+		}
+
+		if diff.Minutes() <= 5 && diff.Minutes() > 0 {
+			// soon flag
+			eTimer.Soon = true
 		}
 
 		// check if a next timer is expired
-		if eTimer.Next.Before(now) || eTimer.Next.Equal(now) {
+		if diff.Minutes() <= 0 {
 			log.Debugf("refresh timer event %s", eTimer.Name)
+
+			if !getData {
+				// get data from d4armory.io only if a next timer expire
+				data, err = getD4EventData()
+				if err != nil {
+					return eventTimers, err
+				}
+				getData = true
+			}
 
 			// reset soon flag
 			eTimer.Soon = false
@@ -270,10 +285,8 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 				eTimer.Latest = eTimer.Next
 				eTimer.Next = time.Unix(int64(data.Boss.Expected), 0)
 			case EventHelltide:
-				// only store next event if not active (next time will be active timer)
-				if !eTimer.Active {
-					eTimer.Latest = eTimer.Next
-				}
+				// re-sync latest timer
+				eTimer.Latest = time.Unix(int64(data.Helltide.Timestamp), 0)
 
 				// toggle active boolean
 				eTimer.Active = !eTimer.Active
