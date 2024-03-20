@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/zoulls/provencal-le-gaulois/pkg/rss"
 	"net/url"
 	"strconv"
 	"strings"
@@ -137,7 +138,7 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "list-id",
-					Description: "Twiiter list ID",
+					Description: "Twitter list ID",
 					Required:    true,
 				},
 				{
@@ -145,6 +146,37 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Name:        "since-id",
 					Description: "Tweets more recent than this ID in the list",
 					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "rss",
+			Description: "Report rss event in the channel",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Task name",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "time",
+					Description: "Time between each check (in minutes)",
+					MinValue:    &integerOptionMinValue,
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url",
+					Description: "RSS url",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "last-guid",
+					Description: "last GUID message",
+					Required:    false,
 				},
 			},
 		},
@@ -201,6 +233,12 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			twitter(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
+		"rss": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "rss"
+			log.Debugf("received cmd %s", cmdName)
+			rssParser(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
 	}
 }
 
@@ -248,10 +286,10 @@ func uptime(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 func debug(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	active := i.ApplicationCommandData().Options[0].BoolValue()
 	if active {
-		log.SetLevel(log.ParseLevel("debug"))
+		log.SetLevel(log.DebugLevel)
 		log.Info("enable debug log")
 	} else {
-		log.SetLevel(log.ParseLevel("info"))
+		log.SetLevel(log.InfoLevel)
 		log.Info("disable debug log")
 	}
 
@@ -511,24 +549,27 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		log.With("err", err).Error("edit embed message")
 	}
 
-	_, err = opt.Cron.AddFunc(
-		durationStr,
-		func() {
-			log.Debug("check D4 events")
+	// Job function for Cron
+	job := func() {
+		log.Debug("check D4 events")
 
-			eventTimers, err = event.RefreshEventTimers(eventTimers)
-			if err != nil {
-				log.With("err", err).Error("refresh event timers")
-			}
+		eventTimers, err = event.RefreshEventTimers(eventTimers)
+		if err != nil {
+			log.With("err", err).Error("refresh event timers")
+		}
 
-			msgEmbed := event.TimerMsg(eventTimers)
-			_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
-			if err != nil {
-				log.With("err", err).Error("edit embed message")
-			}
+		msgEmbed := event.TimerMsg(eventTimers)
+		_, err = s.ChannelMessageEditEmbed(channelID, eventMessageId, &msgEmbed)
+		if err != nil {
+			log.With("err", err).Error("edit embed message")
+		}
 
-			log.Debug("check D4 events done")
-		})
+		log.Debug("check D4 events done")
+	}
+	// First exec
+	job()
+
+	_, err = opt.Cron.AddFunc(durationStr, job)
 	if err != nil {
 		log.With("err", err).Error("D4 events cron creation")
 	}
@@ -613,44 +654,123 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		log.With("err", err).Error("send error message")
 	}
 
-	_, err = opt.Cron.AddFunc(
-		durationStr,
-		func() {
-			log.Debugf("check tweetsList %s (%d)", listName, listId)
+	// Job function for Cron
+	job := func() {
+		log.Debugf("check tweetsList %s (%d)", listName, listId)
 
-			v := url.Values{}
-			v.Set("since_id", sinceId)
+		v := url.Values{}
+		v.Set("since_id", sinceId)
 
-			tweetsList, err := opt.TwitterClient.GetListTweets(listId, false, v)
-			if err != nil {
-				log.With("err", err).Error("GetListTweets")
-			}
+		tweetsList, err := opt.TwitterClient.GetListTweets(listId, false, v)
+		if err != nil {
+			log.With("err", err).Error("GetListTweets")
+		}
 
-			tweetsNb := len(tweetsList)
-			log.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
+		tweetsNb := len(tweetsList)
+		log.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
 
-			if tweetsNb > 0 {
-				// retrieve the most recent tweet id for next schedule
-				sinceId = strconv.FormatInt(tweetsList[0].Id, 10)
+		if tweetsNb > 0 {
+			// retrieve the most recent tweet id for next schedule
+			sinceId = strconv.FormatInt(tweetsList[0].Id, 10)
 
-				// the most recent tweet being first, the loop is done in the descending direction
-				for idx := tweetsNb - 1; idx >= 0; idx-- {
-					// generate twitter url
-					tUrl := utils.URLFromTweet(tweetsList[idx])
-					// send message
-					_, err := s.ChannelMessageSend(channelID, tUrl)
-					if err != nil {
-						log.With("err", err).Error("send error message")
-					}
+			// the most recent tweet being first, the loop is done in the descending direction
+			for idx := tweetsNb - 1; idx >= 0; idx-- {
+				// generate twitter url
+				tUrl := utils.URLFromTweet(tweetsList[idx])
+				// send message
+				_, err := s.ChannelMessageSend(channelID, tUrl)
+				if err != nil {
+					log.With("err", err).Error("send error message")
 				}
 			}
+		}
 
-			log.Debugf("check tweetsList %s (%d) done", listName, listId)
-		})
+		log.Debugf("check tweetsList %s (%d) done", listName, listId)
+	}
+	// First exec
+	job()
+
+	_, err = opt.Cron.AddFunc(durationStr, job)
 	if err != nil {
 		log.With("err", err).Error("Twitter cron creation")
 	}
 	opt.Cron.Start()
 
 	log.Infof("init cron schedule to check tweets every %d minutes for the list %s (%d)", duration, listName, listId)
+}
+
+func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	// Access options in the order provided by the user.
+	optionsParam := i.ApplicationCommandData().Options
+
+	// init channel id for go routine
+	channelID := i.ChannelID
+
+	// Convert option slice into a map
+	var (
+		taskName string
+		duration int
+		rssURL   string
+		lastGUID string
+	)
+
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "name":
+			taskName = optParam.StringValue()
+		case "time":
+			duration = int(optParam.IntValue())
+		case "url":
+			rssURL = optParam.StringValue()
+		case "last-guid":
+			lastGUID = optParam.StringValue()
+		}
+	}
+
+	// duration for cron
+	durationStr := fmt.Sprintf("@every %dm", duration)
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Content: fmt.Sprintf("Check %s every %d minutes", taskName, duration),
+		},
+	})
+	if err != nil {
+		log.With("err", err).Error("send error message")
+	}
+
+	// Job function for Cron
+	job := func() {
+		log.Debugf("check %s", taskName)
+
+		listRSSMsg, err := rss.ParseRSS(rssURL, lastGUID)
+		if err != nil {
+			log.With("err", err).With("taskName", taskName).Error("Error during RSS parse")
+		}
+
+		cpt := len(listRSSMsg)
+		if cpt > 0 {
+			for idx := cpt - 1; idx >= 0; idx-- {
+				_, err := s.ChannelMessageSend(channelID, listRSSMsg[idx])
+				if err != nil {
+					log.With("err", err).With("taskName", taskName).Error("send error message")
+				}
+			}
+			lastGUID = listRSSMsg[0]
+		}
+
+		log.Debugf("check %s done", taskName)
+	}
+	// First exec
+	job()
+
+	_, err = opt.Cron.AddFunc(durationStr, job)
+	if err != nil {
+		log.With("err", err).With("taskName", taskName).Error("RSS cron creation")
+	}
+	opt.Cron.Start()
+
+	log.Infof("init cron schedule to check %s every %d minutes", taskName, duration)
 }
