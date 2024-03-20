@@ -42,7 +42,11 @@ func init() {
 	}
 
 	// Init log level
-	log.SetLevel(log.ParseLevel(os.Getenv("LOG_LEVEL")))
+	lvl, err := log.ParseLevel(os.Getenv("LOG_LEVEL"))
+	if err != nil {
+		log.With("err", err).Fatal("bad LOG_LEVEL value")
+	}
+	log.SetLevel(lvl)
 
 	// Init event host API
 	event.InitHost()
