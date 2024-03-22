@@ -19,8 +19,8 @@ const ActiveStr = ":fire: Ending"
 const NAEventStr = "NA"
 const SoonStr = ":rotating_light:"
 
-const ActiveHelltideTimer = time.Hour
-const NormalHelltideTimer = time.Hour*2 + time.Minute*15
+const ActiveHelltideTimer = 55 * time.Minute
+const NormalHelltideTimer = 5 * time.Minute
 
 // iota number and EventsName array need to have the same order
 const (
