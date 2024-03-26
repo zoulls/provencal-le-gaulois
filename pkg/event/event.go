@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,14 +14,13 @@ import (
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
-const NextEventStr = "Next event"
-const LatestEventStr = "Latest event"
-const ActiveStr = ":fire: Ending"
-const NAEventStr = "NA"
-const SoonStr = ":rotating_light:"
-
-const ActiveHelltideTimer = 55 * time.Minute
-const NormalHelltideTimer = 5 * time.Minute
+const (
+	NextEventStr   = "Next event"
+	LatestEventStr = "Latest event"
+	ActiveStr      = ":fire: Ending"
+	NAEventStr     = "NA"
+	SoonStr        = ":rotating_light:"
+)
 
 // iota number and EventsName array need to have the same order
 const (
@@ -29,9 +29,12 @@ const (
 	EventLegions
 )
 
-var EventsName = []string{"World Boss", "Helltide", "Legion"}
-
-var RegDiscordTime *regexp.Regexp
+var (
+	EventsName          = []string{"World Boss", "Helltide", "Legion"}
+	RegDiscordTime      *regexp.Regexp
+	ActiveHelltideTimer time.Duration
+	NextHelltideTimer   time.Duration
+)
 
 type EventTimer struct {
 	Name    string
@@ -47,6 +50,20 @@ func init() {
 }
 
 func InitEventTimer() []*EventTimer {
+	// Init Helltide timer
+	hActiveDuration, err := time.ParseDuration(os.Getenv("D4_HELLTIDE_ACTIVE_DURATION"))
+	if err != nil {
+		log.With("err", err).Error("no D4 Helltide active duration set")
+	}
+	ActiveHelltideTimer = hActiveDuration
+
+	hNextDuration, err := time.ParseDuration(os.Getenv("D4_HELLTIDE_NEXT_DURATION"))
+	if err != nil {
+		log.With("err", err).Error("no D4 Helltide active duration set")
+	}
+	NextHelltideTimer = hNextDuration
+
+	// Init EventTimer slice
 	eventTimers := make([]*EventTimer, 3)
 	for k, name := range EventsName {
 		eventTimers[k] = &EventTimer{
@@ -73,7 +90,7 @@ func PopulateEventTimer(eventTimers []*EventTimer, activeHelltide bool) ([]*Even
 			eTimer.Active = activeHelltide
 			eTimer.Latest = time.Unix(int64(data.Helltide.Timestamp), 0)
 
-			nTimer := eTimer.Latest.Add(NormalHelltideTimer)
+			nTimer := eTimer.Latest.Add(NextHelltideTimer)
 			if eTimer.Active {
 				nTimer = eTimer.Latest.Add(ActiveHelltideTimer)
 			}
@@ -292,7 +309,7 @@ func RefreshEventTimers(eventTimers []*EventTimer) ([]*EventTimer, error) {
 				eTimer.Active = !eTimer.Active
 
 				// init to normal timer
-				nTimer := eTimer.Latest.Add(NormalHelltideTimer)
+				nTimer := eTimer.Latest.Add(NextHelltideTimer)
 				if eTimer.Active {
 					// if active change for active timer
 					nTimer = eTimer.Latest.Add(ActiveHelltideTimer)
