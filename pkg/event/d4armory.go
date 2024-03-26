@@ -48,8 +48,8 @@ type Whispers struct {
 
 func InitHost() {
 	// Init host value
-	Host = os.Getenv("D4ARMORY_HOST")
-	mockHost := os.Getenv("MOCK_D4ARMORY_HOST")
+	Host = os.Getenv("D4_EVENT_HOST")
+	mockHost := os.Getenv("D4_EVENT_MOCK_HOST")
 	if len(mockHost) > 0 {
 		Host = mockHost
 	}
