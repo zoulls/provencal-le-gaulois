@@ -275,7 +275,7 @@ func uptime(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags:   discordgo.MessageFlagsEphemeral,
-			Content: "uptime: " + time.Since(opt.LaunchTime).String(),
+			Content: "uptime: " + utils.HumanizeDuration(time.Since(opt.LaunchTime)),
 		},
 	})
 	if err != nil {

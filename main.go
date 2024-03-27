@@ -23,7 +23,7 @@ var (
 	// BuildTime is replaced at compile time using ldflags
 	BuildTime string
 	// Version is replaced at compile time using ldflags
-	Version string
+	Version = "Dev"
 	// GitBranch is replaced at compile time using ldflags
 	GitBranch string
 	// GitCommit is replaced at compile time using ldflags
@@ -111,6 +111,12 @@ func main() {
 			log.With("command", v.Name, "err", err).Error("cannot create command")
 		}
 		registeredCommands[i] = cmd
+	}
+
+	// Set bot status
+	err = s.UpdateGameStatus(0, Version)
+	if err != nil {
+		log.With("err", err).Error("cannot set status")
 	}
 
 	// Close discord connection
