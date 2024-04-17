@@ -180,6 +180,25 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 				},
 			},
 		},
+		{
+			Name:        "autoClean",
+			Description: "Put in place auto clean process",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Task name",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "time",
+					Description: "Time between each check (in minutes)",
+					MinValue:    &integerOptionMinValue,
+					Required:    true,
+				},
+			},
+		},
 	}
 }
 
@@ -237,6 +256,12 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			cmdName := "rss"
 			log.Debugf("received cmd %s", cmdName)
 			rssParser(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"autoClean": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "autoClean"
+			log.Debugf("received cmd %s", cmdName)
+			autoClean(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 	}
@@ -477,9 +502,6 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
-	// Author ID of D4 tracker
-	durationStr := fmt.Sprintf("@every %dm", i.ApplicationCommandData().Options[0].IntValue())
-
 	// Access options in the order provided by the user.
 	optionsParam := i.ApplicationCommandData().Options
 	channelID := i.ChannelID
@@ -501,6 +523,9 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			activeHelltide = optParam.BoolValue()
 		}
 	}
+
+	// Convert duration to string duration for cron
+	durationStr := fmt.Sprintf("@every %dm", duration)
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -605,7 +630,7 @@ func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		}
 	}
 
-	// duration for cron
+	// Convert duration to string duration for cron
 	durationStr := fmt.Sprintf("@every %dm", duration)
 
 	// listId conversion
@@ -727,7 +752,7 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		}
 	}
 
-	// duration for cron
+	// Convert duration to string duration for cron
 	durationStr := fmt.Sprintf("@every %dm", duration)
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -743,11 +768,11 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 
 	// Job function for Cron
 	job := func() {
-		log.Debugf("check %s", taskName)
+		log.Debugf("exec %s", taskName)
 
 		listRSSMsg, err := rss.ParseRSS(rssURL, lastGUID)
 		if err != nil {
-			log.With("err", err).With("taskName", taskName).Error("Error during RSS parse")
+			log.With("err", err).With("taskName", taskName).Error("RSS parse")
 		}
 
 		cpt := len(listRSSMsg)
@@ -761,16 +786,70 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 			lastGUID = listRSSMsg[0]
 		}
 
-		log.Debugf("check %s done", taskName)
+		log.Debugf("exec %s done", taskName)
 	}
 	// First exec
 	job()
 
 	_, err = opt.Cron.AddFunc(durationStr, job)
 	if err != nil {
-		log.With("err", err).With("taskName", taskName).Error("RSS cron creation")
+		log.With("err", err).With("taskName", taskName).Error("cron creation")
 	}
 	opt.Cron.Start()
 
-	log.Infof("init cron schedule to check %s every %d minutes", taskName, duration)
+	log.Infof("init cron schedule to exec %s every %d minutes", taskName, duration)
+}
+
+func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	// Access options in the order provided by the user.
+	optionsParam := i.ApplicationCommandData().Options
+
+	// init channel id for go routine
+	//channelID := i.ChannelID
+
+	// Convert option slice into a map
+	var (
+		taskName string
+		duration int
+	)
+
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "name":
+			taskName = optParam.StringValue()
+		case "time":
+			duration = int(optParam.IntValue())
+		}
+	}
+
+	// Convert duration to string duration for cron
+	durationStr := fmt.Sprintf("@every %dm", duration)
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Content: fmt.Sprintf("Check %s every %d minutes", taskName, duration),
+		},
+	})
+	if err != nil {
+		log.With("err", err).Error("send error message")
+	}
+
+	// Job function for Cron
+	job := func() {
+		log.Debugf("exec %s", taskName)
+
+		log.Debugf("exec %s done", taskName)
+	}
+	// First exec
+	job()
+
+	_, err = opt.Cron.AddFunc(durationStr, job)
+	if err != nil {
+		log.With("err", err).With("taskName", taskName).Error("cron creation")
+	}
+	opt.Cron.Start()
+
+	log.Infof("init cron schedule to exec %s every %d minutes", taskName, duration)
 }
