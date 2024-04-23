@@ -11,12 +11,8 @@ import (
 )
 
 func uptime(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Content: "uptime: " + utils.HumanizeDuration(time.Since(opt.LaunchTime)),
-		},
+	_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr("uptime: " + utils.HumanizeDuration(time.Since(opt.LaunchTime))),
 	})
 	if err != nil {
 		log.With("err", err).Error("send error message")
@@ -33,12 +29,8 @@ func debug(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.Info("disable debug log")
 	}
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Content: "debug: " + fmt.Sprint(active),
-		},
+	_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr(fmt.Sprintf("debug: %t", active)),
 	})
 	if err != nil {
 		log.With("err", err).Error("send error message")
@@ -71,12 +63,8 @@ func version(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 		},
 	})
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags:  discordgo.MessageFlagsEphemeral,
-			Embeds: embedsMsg,
-		},
+	_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds: &embedsMsg,
 	})
 	if err != nil {
 		log.With("err", err).Error("send error message")

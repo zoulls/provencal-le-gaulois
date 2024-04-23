@@ -49,3 +49,14 @@ func HumanizeDuration(d time.Duration) string {
 
 	return b.String()
 }
+
+// StringPtr return the pointer ref of a string
+func StringPtr(s string) *string {
+	return &s
+}
+
+// ErrorMsg build error message for discord feedback
+func ErrorMsg(err error) *string {
+	msg := fmt.Sprintf("Error: %s", err.Error())
+	return &msg
+}
