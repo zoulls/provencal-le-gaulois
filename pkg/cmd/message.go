@@ -9,8 +9,22 @@ import (
 	"github.com/charmbracelet/log"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/message"
+	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
+func loadingMessage(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	// loading message
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseType(5),
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.With("err", err).Error("send discord loading message")
+		return
+	}
+}
 func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	_, err := s.ChannelMessageSend(i.ChannelID, "placeholder")
 	if err != nil {
@@ -27,12 +41,8 @@ func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Content: "Done",
-		},
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr("Placeholder created"),
 	})
 	if err != nil {
 		log.With("err", err).Error("send error message")
@@ -70,12 +80,8 @@ func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	messageList, err := message.List(s, channelID, amount, beforeID, afterID, "")
 	if err != nil {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Flags:   discordgo.MessageFlagsEphemeral,
-				Content: err.Error(),
-			},
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(err),
 		})
 		if err != nil {
 			log.With("err", err).Error("send error message")
@@ -83,18 +89,10 @@ func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	resp := &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			// Note: this isn't documented, but you can use that if you want to.
-			// This flag just allows you to create messages visible only for the caller of the command
-			// (user who triggered the command)
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	}
+	resp := &discordgo.WebhookEdit{}
 
 	if len(messageList) == 0 {
-		resp.Data.Content = "No message to list"
+		resp.Content = utils.StringPtr("No message to list")
 	} else {
 		embedsMsg := make([]*discordgo.MessageEmbed, 0)
 
@@ -126,13 +124,13 @@ func list(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 
 		if len(embedsMsg) == 0 {
-			resp.Data.Content = "No message to list after filter"
+			resp.Content = utils.StringPtr("No message to list after filter")
 		} else {
-			resp.Data.Embeds = embedsMsg
+			resp.Embeds = &embedsMsg
 		}
 	}
 
-	err = s.InteractionRespond(i.Interaction, resp)
+	_, err = s.InteractionResponseEdit(i.Interaction, resp)
 	if err != nil {
 		log.With("err", err).Error("send discord embed message")
 	}
@@ -169,12 +167,8 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	messageList, err := message.List(s, channelID, amount, beforeID, afterID, "")
 	if err != nil {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Flags:   discordgo.MessageFlagsEphemeral,
-				Content: err.Error(),
-			},
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(err),
 		})
 		if err != nil {
 			log.With("err", err).Error("send error message")
@@ -183,25 +177,9 @@ func delete(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	if len(messageList) == 0 {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Flags:   discordgo.MessageFlagsEphemeral,
-				Content: "No message to delete",
-			},
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.StringPtr("No message to delete"),
 		})
-		return
-	}
-
-	// loading message
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseType(5),
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.With("err", err).Error("send discord loading message")
 		return
 	}
 
@@ -268,15 +246,11 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	// Convert duration to string duration for cron
 	durationStr := fmt.Sprintf("@every %s", duration)
 
-	// Convert expiration to duration time object
-	exp, err := time.ParseDuration(expiration)
+	// Check duration format
+	_, err := time.ParseDuration(duration)
 	if err != nil {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Flags:   discordgo.MessageFlagsEphemeral,
-				Content: err.Error(),
-			},
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(err),
 		})
 		if err != nil {
 			log.With("err", err).Error("send error message")
@@ -284,15 +258,23 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		return
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Content: fmt.Sprintf("Exec %s every %s", taskName, duration),
-		},
+	// Convert expiration to duration time object
+	exp, err := time.ParseDuration(expiration)
+	if err != nil {
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(err),
+		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
+		return
+	}
+
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr(fmt.Sprintf("Exec %s every %s", taskName, duration)),
 	})
 	if err != nil {
-		log.With("err", err).Error("send error message")
+		log.With("err", err).Error("send message")
 	}
 
 	// Job function for Cron
@@ -307,40 +289,40 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 				Error("list message")
 		}
 
-		if len(messageList) == 0 {
-			log.Debug("no message listed")
-			return
-		}
-		log.Debugf("%d messages listed before filter", len(messageList))
+		if len(messageList) > 0 {
+			log.Debugf("%d messages listed before filter", len(messageList))
 
-		msgList := make([]string, 0)
+			msgList := make([]string, 0)
 
-		timeExp := time.Now().Add(-exp)
+			timeExp := time.Now().Add(-exp)
 
-		for _, msg := range messageList {
-			if msg.Timestamp.Before(timeExp) {
-				addFlag := true
-				if len(authorID) > 0 {
-					if msg.Author.ID != authorID {
-						addFlag = false
+			for _, msg := range messageList {
+				if msg.Timestamp.Before(timeExp) {
+					addFlag := true
+					if len(authorID) > 0 {
+						if msg.Author.ID != authorID {
+							addFlag = false
+						}
+					}
+
+					if addFlag {
+						msgList = append(msgList, msg.ID)
 					}
 				}
-
-				if addFlag {
-					msgList = append(msgList, msg.ID)
-				}
 			}
-		}
 
-		err = s.ChannelMessagesBulkDelete(channelID, msgList)
-		if err != nil {
-			log.With("err", err).
-				With("taskName", taskName).
-				With("channelID", channelID).
-				Error("delete bulk message")
-		}
+			err = s.ChannelMessagesBulkDelete(channelID, msgList)
+			if err != nil {
+				log.With("err", err).
+					With("taskName", taskName).
+					With("channelID", channelID).
+					Error("delete bulk message")
+			}
 
-		log.Debugf("%d messages deleted", len(msgList))
+			log.Debugf("%d messages deleted", len(msgList))
+		} else {
+			log.Debug("no message listed")
+		}
 
 		log.Debugf("exec %s done", taskName)
 	}
@@ -350,6 +332,9 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	_, err = opt.Cron.AddFunc(durationStr, job)
 	if err != nil {
 		log.With("err", err).With("taskName", taskName).Error("cron creation")
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(cronError),
+		})
 	}
 	opt.Cron.Start()
 

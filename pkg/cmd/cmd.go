@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
@@ -22,6 +23,9 @@ type BuildInfo struct {
 	GitBranch string
 	GitCommit string
 }
+
+// default error message
+var cronError = errors.New("cron creation")
 
 func GetApplicationCommand() []*discordgo.ApplicationCommand {
 	integerOptionMinValue := 1.0
@@ -119,11 +123,9 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 			Description: "Check diablo IV event messages, check every X minutes",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "time",
-					Description: "Time between each check (in minutes)",
-					MinValue:    &integerOptionMinValue,
-					MaxValue:    60,
+					Description: "Time between each execution, duration format (https://pkg.go.dev/time#ParseDuration)",
 					Required:    true,
 				},
 				{
@@ -143,11 +145,9 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 			Description: "Report gaming tweets in the channel",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "time",
-					Description: "Time between each check (in minutes)",
-					MinValue:    &integerOptionMinValue,
-					MaxValue:    60,
+					Description: "Time between each execution, duration format (https://pkg.go.dev/time#ParseDuration)",
 					Required:    true,
 				},
 				{
@@ -175,10 +175,9 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "time",
-					Description: "Time between each check (in minutes)",
-					MinValue:    &integerOptionMinValue,
+					Description: "Time between each execution, duration format (https://pkg.go.dev/time#ParseDuration)",
 					Required:    true,
 				},
 				{
@@ -233,60 +232,70 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 		"placeholder": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "placeholder"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			placeholder(s, i)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"uptime": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "uptime"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			uptime(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"version": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "version"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			version(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"list": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "list"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			list(s, i)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"debug": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "debug"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			debug(s, i)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"delete": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "delete"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			delete(s, i)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"d4event": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "d4event"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			d4Event(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"twitter": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "twitter"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			twitter(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"rss": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "rss"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			rssParser(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"auto-clean": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 			cmdName := "auto-clean"
 			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
 			autoClean(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
