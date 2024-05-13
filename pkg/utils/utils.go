@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ChimeraCoder/anaconda"
 )
 
 const (
@@ -23,11 +21,6 @@ func UnixStringToTime(timestamp string) (time.Time, error) {
 	}
 	tm = time.Unix(i, 0)
 	return tm, nil
-}
-
-// URLFromTweet generate Twitter URL from tweet data
-func URLFromTweet(t anaconda.Tweet) string {
-	return "https://twitter.com/" + t.User.ScreenName + "/status/" + t.IdStr
 }
 
 // HumanizeDuration humanizes time.Duration output to a meaningful value
