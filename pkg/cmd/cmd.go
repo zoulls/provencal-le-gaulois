@@ -4,17 +4,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
 	"github.com/charmbracelet/log"
 	"github.com/robfig/cron/v3"
 )
 
 type Option struct {
-	Cron          *cron.Cron
-	LaunchTime    time.Time
-	BuildInfo     BuildInfo
-	TwitterClient *anaconda.TwitterApi
+	Cron       *cron.Cron
+	LaunchTime time.Time
+	BuildInfo  BuildInfo
 }
 
 type BuildInfo struct {
@@ -141,30 +139,6 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 			},
 		},
 		{
-			Name:        "twitter",
-			Description: "Report gaming tweets in the channel",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "time",
-					Description: "Time between each execution, duration format (https://pkg.go.dev/time#ParseDuration)",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "list-id",
-					Description: "Twitter list ID",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "since-id",
-					Description: "Tweets more recent than this ID in the list",
-					Required:    true,
-				},
-			},
-		},
-		{
 			Name:        "rss",
 			Description: "Report rss event in the channel",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -276,13 +250,6 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			log.Debugf("received cmd %s", cmdName)
 			loadingMessage(s, i)
 			d4Event(s, i, opt)
-			log.Debugf("end cmd %s", cmdName)
-		},
-		"twitter": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
-			cmdName := "twitter"
-			log.Debugf("received cmd %s", cmdName)
-			loadingMessage(s, i)
-			twitter(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"rss": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {

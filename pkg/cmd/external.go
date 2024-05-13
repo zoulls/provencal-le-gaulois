@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -138,129 +136,6 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	opt.Cron.Start()
 
 	log.Infof("init cron schedule to check event diablo IV every %s", duration)
-}
-
-func twitter(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
-	// Access options in the order provided by the user.
-	optionsParam := i.ApplicationCommandData().Options
-
-	// init channel id for go routine
-	channelID := i.ChannelID
-
-	// Convert option slice into a map
-	var (
-		duration  string
-		listId    int64
-		listIdStr string
-		listName  string
-		sinceId   string
-	)
-
-	for _, optParam := range optionsParam {
-		switch optParam.Name {
-		case "time":
-			duration = optParam.StringValue()
-		case "list-id":
-			listIdStr = optParam.StringValue()
-		case "since-id":
-			sinceId = optParam.StringValue()
-		}
-	}
-
-	// Convert duration to string duration for cron
-	durationStr := fmt.Sprintf("@every %s", duration)
-
-	// Check duration format
-	_, err := time.ParseDuration(duration)
-	if err != nil {
-		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: utils.ErrorMsg(err),
-		})
-		if err != nil {
-			log.With("err", err).Error("send error message")
-		}
-		return
-	}
-
-	// listId conversion
-	listId, err = strconv.ParseInt(listIdStr, 10, 64)
-	if err != nil {
-		log.With("err", err).Error("listId conversion")
-		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: utils.ErrorMsg(err),
-		})
-		if err != nil {
-			log.With("err", err).Error("send error message")
-		}
-		return
-	}
-
-	// Retrieve Twitter list data
-	tList, err := opt.TwitterClient.GetList(listId, url.Values{})
-	if err != nil {
-		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: utils.ErrorMsg(err),
-		})
-		if err != nil {
-			log.With("err", err).Error("send error message")
-		}
-		return
-	}
-	listName = tList.Name
-
-	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Content: utils.StringPtr(fmt.Sprintf("Check tweets every %s for the list %s (%d)", duration, listName, listId)),
-	})
-	if err != nil {
-		log.With("err", err).Error("send message")
-	}
-
-	// Job function for Cron
-	job := func() {
-		log.Debugf("check tweetsList %s (%d)", listName, listId)
-
-		v := url.Values{}
-		v.Set("since_id", sinceId)
-
-		tweetsList, err := opt.TwitterClient.GetListTweets(listId, false, v)
-		if err != nil {
-			log.With("err", err).Error("GetListTweets")
-		}
-
-		tweetsNb := len(tweetsList)
-		log.Debugf("tweetsList %s (%d) count: %d", listName, listId, tweetsNb)
-
-		if tweetsNb > 0 {
-			// retrieve the most recent tweet id for next schedule
-			sinceId = strconv.FormatInt(tweetsList[0].Id, 10)
-
-			// the most recent tweet being first, the loop is done in the descending direction
-			for idx := tweetsNb - 1; idx >= 0; idx-- {
-				// generate twitter url
-				tUrl := utils.URLFromTweet(tweetsList[idx])
-				// send message
-				_, err := s.ChannelMessageSend(channelID, tUrl)
-				if err != nil {
-					log.With("err", err).Error("send error message")
-				}
-			}
-		}
-
-		log.Debugf("check tweetsList %s (%d) done", listName, listId)
-	}
-	// First exec
-	job()
-
-	_, err = opt.Cron.AddFunc(durationStr, job)
-	if err != nil {
-		log.With("err", err).Error("Twitter cron creation")
-		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: utils.ErrorMsg(cronError),
-		})
-	}
-	opt.Cron.Start()
-
-	log.Infof("init cron schedule to check tweets every %s for the list %s (%d)", duration, listName, listId)
 }
 
 func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {

@@ -5,7 +5,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
 	"github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
@@ -60,14 +59,6 @@ func init() {
 	// Init cron
 	c = cron.New()
 
-	// Init Twitter client
-	twitterClient := anaconda.NewTwitterApiWithCredentials(
-		os.Getenv("TWITTER_ACCESS_TOKEN"),
-		os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"),
-		os.Getenv("TWITTER_CONSUMER_KEY"),
-		os.Getenv("TWITTER_CONSUMER_SECRET"),
-	)
-
 	// Init command option
 	opt := cmd.Option{
 		Cron:       c,
@@ -78,7 +69,6 @@ func init() {
 			GitBranch: GitBranch,
 			GitCommit: GitCommit,
 		},
-		TwitterClient: twitterClient,
 	}
 
 	// Declare ApplicationCommandData
