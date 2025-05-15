@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -150,7 +151,7 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		taskName string
 		duration string
 		rssURL   string
-		lastGUID string
+		nbMax    int
 	)
 
 	for _, optParam := range optionsParam {
@@ -161,8 +162,8 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 			duration = optParam.StringValue()
 		case "url":
 			rssURL = optParam.StringValue()
-		case "last-guid":
-			lastGUID = optParam.StringValue()
+		case "nb-last-news":
+			nbMax = int(optParam.IntValue())
 		}
 	}
 
@@ -188,13 +189,27 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		log.With("err", err).Error("send message")
 	}
 
+	// Init first last GUIDs
+	lastGUIDs := make([]string, 0, 5)
+	first := true
+
 	// Job function for Cron
 	job := func() {
 		log.Debugf("exec %s", taskName)
 
-		listRSSMsg, err := rss.ParseRSS(rssURL, lastGUID)
+		listRSSMsg, listGUIDs, err := rss.ParseRSS(rssURL, nbMax, lastGUIDs)
 		if err != nil {
 			log.With("err", err).With("taskName", taskName).Error("RSS parse")
+		}
+
+		// Update variables
+		lastGUIDs = listGUIDs
+		nbMax = 10
+
+		if first {
+			// Reverse the order of the last GUIDs
+			slices.Reverse(lastGUIDs)
+			first = false
 		}
 
 		cpt := len(listRSSMsg)
@@ -205,7 +220,6 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 					log.With("err", err).With("taskName", taskName).Error("send error message")
 				}
 			}
-			lastGUID = listRSSMsg[0]
 		}
 
 		log.Debugf("exec %s done", taskName)
