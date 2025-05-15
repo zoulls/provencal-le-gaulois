@@ -31,11 +31,15 @@ var (
 
 func init() {
 	// Load .env var
-	_, err := os.Stat(".env")
+	envFile := os.Getenv("ENV_FILE")
+	if envFile == "" {
+		envFile = ".env"
+	}
+	_, err := os.Stat(envFile)
 	if err != nil {
 		log.With("err", err).Fatal("no .env file")
 	}
-	err = godotenv.Load()
+	err = godotenv.Load(envFile)
 	if err != nil {
 		log.With("err", err).Fatal("loading .env file")
 	}
