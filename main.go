@@ -12,6 +12,7 @@ import (
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/cmd"
 	"github.com/zoulls/provencal-le-gaulois/pkg/event"
+	"github.com/zoulls/provencal-le-gaulois/pkg/rss"
 )
 
 var (
@@ -51,8 +52,9 @@ func init() {
 	}
 	log.SetLevel(lvl)
 
-	// Init event host API
+	// call Init functions
 	event.InitHost()
+	rss.InitRSS()
 
 	// Init discord session
 	s, err = discordgo.New("Bot " + os.Getenv("BOT_TOKEN"))
