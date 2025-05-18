@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -191,7 +190,6 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 
 	// Init first last GUIDs
 	lastGUIDs := make([]string, 0, 5)
-	first := true
 
 	// Job function for Cron
 	job := func() {
@@ -204,13 +202,7 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 
 		// Update variables
 		lastGUIDs = listGUIDs
-		nbMax = 10
-
-		if first {
-			// Reverse the order of the last GUIDs
-			slices.Reverse(lastGUIDs)
-			first = false
-		}
+		nbMax = rss.DefaultNbMax
 
 		cpt := len(listRSSMsg)
 		if cpt > 0 {
