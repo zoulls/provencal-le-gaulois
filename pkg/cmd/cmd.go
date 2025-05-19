@@ -203,10 +203,28 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 		{
 			Name:        "list-cron",
 			Description: "List all cron jobs",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "cron-id",
+					Description: "Cron ID to list",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+			},
 		},
 		{
 			Name:        "list-tasks",
 			Description: "List active tasks",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "task-id",
+					Description: "Task ID to list",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+			},
 		},
 		{
 			Name:        "delete-task",
