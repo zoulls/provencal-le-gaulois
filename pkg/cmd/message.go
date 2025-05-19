@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/robfig/cron/v3"
+	"github.com/zoulls/provencal-le-gaulois/pkg/task"
 	"strings"
 	"time"
 
@@ -339,4 +341,89 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	opt.Cron.Start()
 
 	log.Infof("init cron schedule to exec %s every %s", taskName, duration)
+}
+
+// listCron is a function to list all cron jobs
+func listCron(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	resp := &discordgo.WebhookEdit{}
+	embedsMsg := make([]*discordgo.MessageEmbed, 0)
+
+	lCron := opt.Cron.Entries()
+
+	if len(lCron) == 0 {
+		resp.Content = utils.StringPtr("No active cron")
+	} else {
+		for _, val := range lCron {
+			msgEmb := discordgo.MessageEmbed{
+				Title: "List cron jobs",
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:  "ID",
+						Value: fmt.Sprintf("%d", val.ID),
+					},
+					{
+						Name:  "Prev time",
+						Value: val.Prev.String(),
+					},
+					{
+						Name:  "Next time",
+						Value: val.Next.String(),
+					},
+				},
+			}
+			embedsMsg = append(embedsMsg, &msgEmb)
+		}
+	}
+	resp.Embeds = &embedsMsg
+
+	_, err := s.InteractionResponseEdit(i.Interaction, resp)
+	if err != nil {
+		log.With("err", err).Error("list cron jobs")
+	}
+}
+
+// listTask is a function to list all tasks scheduled
+func listTasks(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	resp := &discordgo.WebhookEdit{}
+	embedsMsg := make([]*discordgo.MessageEmbed, 0)
+
+	// Get the list of tasks
+	tasks := task.GetListTasks()
+
+	if len(tasks) == 0 {
+		resp.Content = utils.StringPtr("No active task")
+	} else {
+		for _, val := range tasks {
+			cronInfo := opt.Cron.Entry(cron.EntryID(val.ID))
+
+			msgEmb := discordgo.MessageEmbed{
+				Title: "List of tasks",
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:  "ID",
+						Value: fmt.Sprintf("%d", val.ID),
+					},
+					{
+						Name:  "Name",
+						Value: val.TaskName,
+					},
+					{
+						Name:  "Prev time",
+						Value: cronInfo.Prev.String(),
+					},
+					{
+						Name:  "Next time",
+						Value: cronInfo.Next.String(),
+					},
+				},
+			}
+			embedsMsg = append(embedsMsg, &msgEmb)
+		}
+	}
+	resp.Embeds = &embedsMsg
+
+	_, err := s.InteractionResponseEdit(i.Interaction, resp)
+	if err != nil {
+		log.With("err", err).Error("list tasks")
+	}
 }

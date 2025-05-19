@@ -10,6 +10,7 @@ import (
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/event"
 	"github.com/zoulls/provencal-le-gaulois/pkg/rss"
+	"github.com/zoulls/provencal-le-gaulois/pkg/task"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )
 
@@ -216,17 +217,19 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 
 		log.Debugf("exec %s done", taskName)
 	}
-	// First exec
-	job()
 
-	_, err = opt.Cron.AddFunc(durationStr, job)
+	err = task.CreateTask(task.Option{
+		Cron:     opt.Cron,
+		Spec:     durationStr,
+		TaskName: taskName,
+		Task:     job,
+	})
 	if err != nil {
 		log.With("err", err).With("taskName", taskName).Error("cron creation")
 		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 			Content: utils.ErrorMsg(cronError),
 		})
 	}
-	opt.Cron.Start()
 
 	log.Infof("init cron schedule to exec %s every %s", taskName, duration)
 }
