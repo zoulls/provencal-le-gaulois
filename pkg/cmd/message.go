@@ -346,24 +346,79 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	log.Infof("init cron schedule to exec %s every %s", taskName, duration)
 }
 
-// listCron is a function to list all cron jobs
+// buildTaskEmbeds generate embeds for tasks
+func buildTaskEmbeds(tasks []task.List, cronObj *cron.Cron) []*discordgo.MessageEmbed {
+	embeds := make([]*discordgo.MessageEmbed, 0, len(tasks))
+	for _, val := range tasks {
+		cronInfo := cronObj.Entry(cron.EntryID(val.ID))
+		msgEmb := &discordgo.MessageEmbed{
+			Title: "List of tasks",
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:  "ID",
+					Value: fmt.Sprintf("%d", val.ID),
+				},
+				{
+					Name:  "Name",
+					Value: val.TaskName,
+				},
+				{
+					Name:  "Prev time",
+					Value: cronInfo.Prev.String(),
+				},
+				{
+					Name:  "Next time",
+					Value: cronInfo.Next.String(),
+				},
+			},
+		}
+		embeds = append(embeds, msgEmb)
+	}
+	return embeds
+}
+
+// buildCronEmbeds generate embeds for cron jobs
+func buildCronEmbeds(crons []cron.Entry) []*discordgo.MessageEmbed {
+	embeds := make([]*discordgo.MessageEmbed, 0, len(crons))
+	for _, val := range crons {
+		msgEmb := &discordgo.MessageEmbed{
+			Title: "List cron jobs",
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:  "ID",
+					Value: fmt.Sprintf("%d", val.ID),
+				},
+				{
+					Name:  "Prev time",
+					Value: val.Prev.String(),
+				},
+				{
+					Name:  "Next time",
+					Value: val.Next.String(),
+				},
+			},
+		}
+		embeds = append(embeds, msgEmb)
+	}
+	return embeds
+}
+
+// listCron list all cron jobs
 func listCron(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	resp := &discordgo.WebhookEdit{}
-	var cronID int
-	lCron := make([]cron.Entry, 0)
-	embedsMsg := make([]*discordgo.MessageEmbed, 0)
-
-	// Access options in the order provided by the user.
+	var cronID, startIndex int
+	maxMessages := 10
 	optionsParam := i.ApplicationCommandData().Options
-
-	// Convert option slice into a map
 	for _, optParam := range optionsParam {
 		switch optParam.Name {
 		case "cron-id":
 			cronID = int(optParam.IntValue())
+		case "start-index":
+			startIndex = int(optParam.IntValue())
 		}
 	}
 
+	var lCron []cron.Entry
 	if cronID > 0 {
 		entry := opt.Cron.Entry(cron.EntryID(cronID))
 		if !entry.Valid() {
@@ -379,56 +434,49 @@ func listCron(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) 
 		lCron = opt.Cron.Entries()
 	}
 
-	if len(lCron) == 0 {
+	totalCrons := len(lCron)
+	if totalCrons == 0 {
 		resp.Content = utils.StringPtr("No active cron")
 	} else {
-		for _, val := range lCron {
-			msgEmb := discordgo.MessageEmbed{
-				Title: "List cron jobs",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "ID",
-						Value: fmt.Sprintf("%d", val.ID),
-					},
-					{
-						Name:  "Prev time",
-						Value: val.Prev.String(),
-					},
-					{
-						Name:  "Next time",
-						Value: val.Next.String(),
-					},
-				},
-			}
-			embedsMsg = append(embedsMsg, &msgEmb)
+		if startIndex < 0 {
+			startIndex = 0
+		}
+		if startIndex > totalCrons {
+			startIndex = totalCrons
+		}
+		endIndex := startIndex + maxMessages
+		if endIndex > totalCrons {
+			endIndex = totalCrons
+		}
+		displayedCrons := lCron[startIndex:endIndex]
+		resp.Embeds = &[]*discordgo.MessageEmbed{}
+		*resp.Embeds = buildCronEmbeds(displayedCrons)
+		if totalCrons > maxMessages {
+			resp.Content = utils.StringPtr(fmt.Sprintf("Showing crons %d to %d on %d.", startIndex+1, endIndex, totalCrons))
 		}
 	}
-	resp.Embeds = &embedsMsg
-
 	_, err := s.InteractionResponseEdit(i.Interaction, resp)
 	if err != nil {
 		log.With("err", err).Error("list cron jobs")
 	}
 }
 
-// listTask is a function to list all tasks scheduled
+// listTasks list all tasks
 func listTasks(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	resp := &discordgo.WebhookEdit{}
-	var taskID int
-	tasks := make([]task.List, 0)
-	embedsMsg := make([]*discordgo.MessageEmbed, 0)
-
-	// Access options in the order provided by the user.
+	var taskID, startIndex int
+	maxMessages := 10
 	optionsParam := i.ApplicationCommandData().Options
-
-	// Convert option slice into a map
 	for _, optParam := range optionsParam {
 		switch optParam.Name {
 		case "task-id":
 			taskID = int(optParam.IntValue())
+		case "start-index":
+			startIndex = int(optParam.IntValue())
 		}
 	}
 
+	var tasks []task.List
 	if taskID > 0 {
 		taskSelected := task.GetTask(taskID)
 		if !taskSelected.Valid() {
@@ -441,42 +489,30 @@ func listTasks(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		}
 		tasks = append(tasks, taskSelected)
 	} else {
-		// Get the list of tasks
 		tasks = task.GetListTasks()
 	}
 
-	if len(tasks) == 0 {
+	totalTasks := len(tasks)
+	if totalTasks == 0 {
 		resp.Content = utils.StringPtr("No active task")
 	} else {
-		for _, val := range tasks {
-			cronInfo := opt.Cron.Entry(cron.EntryID(val.ID))
-
-			msgEmb := discordgo.MessageEmbed{
-				Title: "List of tasks",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "ID",
-						Value: fmt.Sprintf("%d", val.ID),
-					},
-					{
-						Name:  "Name",
-						Value: val.TaskName,
-					},
-					{
-						Name:  "Prev time",
-						Value: cronInfo.Prev.String(),
-					},
-					{
-						Name:  "Next time",
-						Value: cronInfo.Next.String(),
-					},
-				},
-			}
-			embedsMsg = append(embedsMsg, &msgEmb)
+		if startIndex < 0 {
+			startIndex = 0
+		}
+		if startIndex > totalTasks {
+			startIndex = totalTasks
+		}
+		endIndex := startIndex + maxMessages
+		if endIndex > totalTasks {
+			endIndex = totalTasks
+		}
+		displayedTasks := tasks[startIndex:endIndex]
+		resp.Embeds = &[]*discordgo.MessageEmbed{}
+		*resp.Embeds = buildTaskEmbeds(displayedTasks, opt.Cron)
+		if totalTasks > maxMessages {
+			resp.Content = utils.StringPtr(fmt.Sprintf("Showing tasks %d to %d on %d.", startIndex+1, endIndex, totalTasks))
 		}
 	}
-	resp.Embeds = &embedsMsg
-
 	_, err := s.InteractionResponseEdit(i.Interaction, resp)
 	if err != nil {
 		log.With("err", err).Error("list tasks")
