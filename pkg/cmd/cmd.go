@@ -199,6 +199,14 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 				},
 			},
 		},
+		{
+			Name:        "list-cron",
+			Description: "List all cron jobs",
+		},
+		{
+			Name:        "list-tasks",
+			Description: "List active tasks",
+		},
 	}
 }
 
@@ -265,6 +273,20 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			log.Debugf("received cmd %s", cmdName)
 			loadingMessage(s, i)
 			autoClean(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"list-cron": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "list-cron"
+			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
+			listCron(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"list-tasks": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "list-tasks"
+			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
+			listTasks(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 	}
