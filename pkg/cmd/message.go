@@ -27,6 +27,7 @@ func loadingMessage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 }
+
 func placeholder(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	_, err := s.ChannelMessageSend(i.ChannelID, "placeholder")
 	if err != nil {
@@ -328,17 +329,19 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 
 		log.Debugf("exec %s done", taskName)
 	}
-	// First exec
-	job()
 
-	_, err = opt.Cron.AddFunc(durationStr, job)
+	err = task.CreateTask(task.Option{
+		Cron:     opt.Cron,
+		Spec:     durationStr,
+		TaskName: taskName,
+		Task:     job,
+	})
 	if err != nil {
 		log.With("err", err).With("taskName", taskName).Error("cron creation")
 		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 			Content: utils.ErrorMsg(cronError),
 		})
 	}
-	opt.Cron.Start()
 
 	log.Infof("init cron schedule to exec %s every %s", taskName, duration)
 }
@@ -425,5 +428,45 @@ func listTasks(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	_, err := s.InteractionResponseEdit(i.Interaction, resp)
 	if err != nil {
 		log.With("err", err).Error("list tasks")
+	}
+}
+
+// deleteTask is a function to delete a specific task
+func deleteTask(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	// Init variables
+	var taskID int
+	resp := &discordgo.WebhookEdit{}
+
+	// Access options in the order provided by the user.
+	optionsParam := i.ApplicationCommandData().Options
+
+	// Convert option slice into a map
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "task-id":
+			taskID = int(optParam.IntValue())
+		}
+	}
+
+	// Check if taskID is valid
+	entry := opt.Cron.Entry(cron.EntryID(taskID))
+	if entry.Valid() == false {
+		resp.Content = utils.StringPtr(fmt.Sprintf("Task %d not found", taskID))
+		_, err := s.InteractionResponseEdit(i.Interaction, resp)
+		if err != nil {
+			log.With("err", err).Error("delete task")
+		}
+		return
+	}
+
+	// Remove task from list
+	task.DeleteTask(opt.Cron, taskID)
+
+	// Add message to response
+	resp.Content = utils.StringPtr(fmt.Sprintf("Task %d deleted", taskID))
+
+	_, err := s.InteractionResponseEdit(i.Interaction, resp)
+	if err != nil {
+		log.With("err", err).Error("delete task")
 	}
 }

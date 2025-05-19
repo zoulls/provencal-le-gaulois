@@ -165,6 +165,7 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Name:        "nb-last-news",
 					Description: "Number of last news",
 					Required:    false,
+					MinValue:    &integerOptionMinValue,
 					MaxValue:    10,
 				},
 			},
@@ -206,6 +207,19 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 		{
 			Name:        "list-tasks",
 			Description: "List active tasks",
+		},
+		{
+			Name:        "delete-task",
+			Description: "Delete a specific task",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "task-id",
+					Description: "Task ID to delete",
+					MinValue:    &integerOptionMinValue,
+					Required:    true,
+				},
+			},
 		},
 	}
 }
@@ -287,6 +301,13 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			log.Debugf("received cmd %s", cmdName)
 			loadingMessage(s, i)
 			listTasks(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"delete-task": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "delete-task"
+			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
+			deleteTask(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 	}
