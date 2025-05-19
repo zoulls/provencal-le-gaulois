@@ -44,6 +44,25 @@ func setListTasks(taskList []List) {
 	ListTasks = taskList
 }
 
+// GetTask get a task by id
+func GetTask(id int) List {
+	taskList := GetListTasks()
+	for _, task := range taskList {
+		if task.ID == id {
+			return task
+		}
+	}
+	return List{}
+}
+
+// Valid check if a task is valid
+func (l List) Valid() bool {
+	if l.ID > 0 {
+		return true
+	}
+	return false
+}
+
 // CreateTask create a task
 func CreateTask(option Option) error {
 	// First exec of the job

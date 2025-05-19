@@ -349,9 +349,35 @@ func autoClean(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 // listCron is a function to list all cron jobs
 func listCron(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	resp := &discordgo.WebhookEdit{}
+	var cronID int
+	lCron := make([]cron.Entry, 0)
 	embedsMsg := make([]*discordgo.MessageEmbed, 0)
 
-	lCron := opt.Cron.Entries()
+	// Access options in the order provided by the user.
+	optionsParam := i.ApplicationCommandData().Options
+
+	// Convert option slice into a map
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "cron-id":
+			cronID = int(optParam.IntValue())
+		}
+	}
+
+	if cronID > 0 {
+		entry := opt.Cron.Entry(cron.EntryID(cronID))
+		if !entry.Valid() {
+			resp.Content = utils.StringPtr(fmt.Sprintf("Cron %d not found", cronID))
+			_, err := s.InteractionResponseEdit(i.Interaction, resp)
+			if err != nil {
+				log.With("err", err).Error("list cron jobs")
+			}
+			return
+		}
+		lCron = append(lCron, entry)
+	} else {
+		lCron = opt.Cron.Entries()
+	}
 
 	if len(lCron) == 0 {
 		resp.Content = utils.StringPtr("No active cron")
@@ -388,10 +414,36 @@ func listCron(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) 
 // listTask is a function to list all tasks scheduled
 func listTasks(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 	resp := &discordgo.WebhookEdit{}
+	var taskID int
+	tasks := make([]task.List, 0)
 	embedsMsg := make([]*discordgo.MessageEmbed, 0)
 
-	// Get the list of tasks
-	tasks := task.GetListTasks()
+	// Access options in the order provided by the user.
+	optionsParam := i.ApplicationCommandData().Options
+
+	// Convert option slice into a map
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "task-id":
+			taskID = int(optParam.IntValue())
+		}
+	}
+
+	if taskID > 0 {
+		taskSelected := task.GetTask(taskID)
+		if !taskSelected.Valid() {
+			resp.Content = utils.StringPtr(fmt.Sprintf("Task %d not found", taskID))
+			_, err := s.InteractionResponseEdit(i.Interaction, resp)
+			if err != nil {
+				log.With("err", err).Error("list tasks")
+			}
+			return
+		}
+		tasks = append(tasks, taskSelected)
+	} else {
+		// Get the list of tasks
+		tasks = task.GetListTasks()
+	}
 
 	if len(tasks) == 0 {
 		resp.Content = utils.StringPtr("No active task")
