@@ -211,6 +211,13 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "start-index",
+					Description: "Start index of the cron list",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -221,6 +228,13 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "task-id",
 					Description: "Task ID to list",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "start-index",
+					Description: "Start index of the task list",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},
