@@ -44,6 +44,7 @@ func setListTasks(taskList []List) {
 	ListTasks = taskList
 }
 
+// CreateTask create a task
 func CreateTask(option Option) error {
 	// First exec of the job
 	option.Task()
@@ -66,4 +67,24 @@ func CreateTask(option Option) error {
 	option.Cron.Start()
 
 	return nil
+}
+
+// DeleteTask delete a task
+func DeleteTask(cronParam *cron.Cron, id int) {
+	// Get task list
+	taskList := GetListTasks()
+
+	// Remove task from cron
+	cronParam.Remove(cron.EntryID(id))
+
+	// Delete task from list
+	for i, v := range taskList {
+		if v.ID == id {
+			taskList = append(taskList[:i], taskList[i+1:]...)
+			break
+		}
+	}
+
+	// Set task list
+	setListTasks(taskList)
 }

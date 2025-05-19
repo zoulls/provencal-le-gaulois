@@ -124,17 +124,20 @@ func d4Event(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
 
 		log.Debug("check D4 events done")
 	}
-	// First exec
-	job()
 
-	_, err = opt.Cron.AddFunc(durationStr, job)
+	// Create cron job
+	err = task.CreateTask(task.Option{
+		Cron:     opt.Cron,
+		Spec:     durationStr,
+		TaskName: "d4-event",
+		Task:     job,
+	})
 	if err != nil {
 		log.With("err", err).Error("D4 events cron creation")
 		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 			Content: utils.ErrorMsg(cronError),
 		})
 	}
-	opt.Cron.Start()
 
 	log.Infof("init cron schedule to check event diablo IV every %s", duration)
 }
