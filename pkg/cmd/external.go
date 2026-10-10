@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/event"
 	"github.com/zoulls/provencal-le-gaulois/pkg/rss"
@@ -235,4 +235,113 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 	}
 
 	log.Infof("init cron schedule to exec %s every %s", taskName, duration)
+}
+
+func steamRSSParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	optionsParam := i.ApplicationCommandData().Options
+	channelID := i.ChannelID
+
+	var (
+		urlsStr  string
+		duration string
+	)
+
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "url-list":
+			urlsStr = optParam.StringValue()
+		case "time":
+			duration = optParam.StringValue()
+		}
+	}
+
+	if len(duration) == 0 {
+		duration = "60m"
+	}
+
+	durationStr := fmt.Sprintf("@every %s", duration)
+
+	_, err := time.ParseDuration(duration)
+	if err != nil {
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.ErrorMsg(err),
+		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
+		return
+	}
+
+	// Trim space
+	urlsStrTrim := strings.ReplaceAll(urlsStr, " ", "")
+	// Split the list with comma for separation
+	urls := strings.Split(urlsStrTrim, ",")
+	// Number of URL
+	nbUrls := len(urls)
+
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr(fmt.Sprintf("Create %d task Steam RSS for each %s", nbUrls, duration)),
+	})
+	if err != nil {
+		log.With("err", err).Error("send message")
+	}
+
+	for _, u := range urls {
+		// Init var
+		rssURL := u
+		lastGUIDs := make([]string, 0, 5)
+		nbMax := 0
+
+		// Extract steam ID
+		log.Debugf("rssURL: %s", rssURL)
+		steamID, err := utils.ExtractSteamID(rssURL)
+		log.Debugf("steamID: %s", steamID)
+		if err != nil {
+			log.With("err", err).With("rssURL", rssURL).Error("steam ID extraction")
+			// En cas d'erreur sur une tâche spécifique, on notifie mais on continue la boucle
+			_, _ = s.ChannelMessageSend(channelID, fmt.Sprintf("Error during task creation %s", rssURL))
+			continue
+		}
+		taskName := fmt.Sprintf("Steam RSS %s", steamID)
+
+		job := func() {
+			log.Debugf("exec %s", taskName)
+
+			listRSSMsg, listGUIDs, err := rss.ParseRSS(rssURL, nbMax, lastGUIDs)
+			if err != nil {
+				log.With("err", err).With("taskName", taskName).Error("RSS parse")
+			}
+
+			// Update variables
+			lastGUIDs = listGUIDs
+			nbMax = rss.DefaultNbMax
+
+			cpt := len(listRSSMsg)
+			if cpt > 0 {
+				for i := cpt - 1; i >= 0; i-- {
+					_, err := s.ChannelMessageSend(channelID, listRSSMsg[i])
+					if err != nil {
+						log.With("err", err).With("taskName", taskName).Error("send error message")
+					}
+				}
+			}
+
+			log.Debugf("exec %s done", taskName)
+		}
+
+		err = task.CreateTask(task.Option{
+			Cron:     opt.Cron,
+			Spec:     durationStr,
+			TaskName: taskName,
+			Task:     job,
+		})
+		if err != nil {
+			log.With("err", err).With("taskName", taskName).Error("cron creation")
+			// En cas d'erreur sur une tâche spécifique, on notifie mais on continue la boucle
+			_, _ = s.ChannelMessageSend(channelID, fmt.Sprintf("Error during task creation %s", rssURL))
+			continue
+		}
+
+		log.Infof("init cron schedule to exec %s every %s", taskName, duration)
+	}
 }
