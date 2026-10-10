@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -52,4 +54,15 @@ func StringPtr(s string) *string {
 func ErrorMsg(err error) *string {
 	msg := fmt.Sprintf("Error: %s", err.Error())
 	return &msg
+}
+
+// ExtractSteamID extract steam ID of URL
+func ExtractSteamID(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	// path.Base extract directly the latest part of the URL
+	return path.Base(u.Path), nil
 }

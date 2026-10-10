@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/charmbracelet/log"
+	"charm.land/log/v2"
 )
 
 // Host API

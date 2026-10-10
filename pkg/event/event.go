@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"
 )

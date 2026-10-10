@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/robfig/cron/v3"
-	"github.com/zoulls/provencal-le-gaulois/pkg/task"
 	"strings"
 	"time"
 
+	"github.com/robfig/cron/v3"
+	"github.com/zoulls/provencal-le-gaulois/pkg/task"
+
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 
 	"github.com/zoulls/provencal-le-gaulois/pkg/message"
 	"github.com/zoulls/provencal-le-gaulois/pkg/utils"

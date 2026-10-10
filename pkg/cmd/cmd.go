@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 	"github.com/robfig/cron/v3"
 )
 
@@ -171,6 +171,24 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 			},
 		},
 		{
+			Name:        "steam-rss",
+			Description: "List steam rss event in the channel",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url-list",
+					Description: "List of steam RSS separate with a comma",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "time",
+					Description: "Time between each execution for all the list, Default value 60m",
+					Required:    false,
+				},
+			},
+		},
+		{
 			Name:        "auto-clean",
 			Description: "Auto clean messages every each time (batch of 100 messages max)",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -312,6 +330,13 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			log.Debugf("received cmd %s", cmdName)
 			loadingMessage(s, i)
 			rssParser(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"steam-rss": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "steam-rss"
+			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
+			steamRSSParser(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 		"auto-clean": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {

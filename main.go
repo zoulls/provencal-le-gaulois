@@ -5,8 +5,8 @@ import (
 	"os/signal"
 	"time"
 
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
 	cron "github.com/robfig/cron/v3"
 

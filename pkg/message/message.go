@@ -3,8 +3,8 @@ package message
 import (
 	"errors"
 
+	"charm.land/log/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/charmbracelet/log"
 )
 
 func List(s *discordgo.Session, channelID string, limit int, beforeID, afterID, aroundID string) ([]*discordgo.Message, error) {
