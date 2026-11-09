@@ -16,6 +16,7 @@ var ListTasksOnce sync.Once
 type List struct {
 	TaskName string
 	ID       int
+	URL      string
 }
 
 // Option is the option for task
@@ -24,6 +25,7 @@ type Option struct {
 	Spec     string
 	TaskName string
 	Task     func()
+	URL      string
 }
 
 // GetListTasks get the task list
@@ -79,6 +81,7 @@ func CreateTask(option Option) error {
 	ListTasks = append(ListTasks, List{
 		TaskName: option.TaskName,
 		ID:       int(id),
+		URL:      option.URL,
 	})
 	setListTasks(ListTasks)
 

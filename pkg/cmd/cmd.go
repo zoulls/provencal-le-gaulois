@@ -271,6 +271,33 @@ func GetApplicationCommand() []*discordgo.ApplicationCommand {
 				},
 			},
 		},
+		{
+			Name:        "repost-rss",
+			Description: "Repost the X last news of RSS and Steam RSS feeds",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "amount",
+					Description: "Number of news items to repost",
+					MinValue:    &integerOptionMinValue,
+					MaxValue:    10,
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url",
+					Description: "RSS or Steam RSS URL (or comma-separated list of URLs)",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "task-id",
+					Description: "Task ID of an active RSS / Steam task",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+			},
+		},
 	}
 }
 
@@ -365,6 +392,13 @@ func GetCommandHandlers() map[string]func(*discordgo.Session, *discordgo.Interac
 			log.Debugf("received cmd %s", cmdName)
 			loadingMessage(s, i)
 			deleteTask(s, i, opt)
+			log.Debugf("end cmd %s", cmdName)
+		},
+		"repost-rss": func(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+			cmdName := "repost-rss"
+			log.Debugf("received cmd %s", cmdName)
+			loadingMessage(s, i)
+			repostRSS(s, i, opt)
 			log.Debugf("end cmd %s", cmdName)
 		},
 	}
