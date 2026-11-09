@@ -14,13 +14,15 @@ Provencal le gaulois is a bot discord written in go.
 
 ## Run in docker
 * Generate binary and docker image `make build`
-* Run bot image link to redis container `docker run --name provencal-le-gaulois -d provencal-le-gaulois:<latest_tag>`
+* Run docker container with `make run` (or `docker run --name provencal-le-gaulois -d provencal-le-gaulois:<latest_tag>`)
 
 ## Dev Getting Started
 * Copy `.env` to `.env-dev` file
 * Adjust `.env-dev` file with all development tokens
 * Use the commands `go mod tidy` to pull the vendor
+* Run unit tests with `make test`
 * Generate binary and docker image for development with `make dev`
+* Run development container with `make run-dev`
 
 ## Run Locally
 * Generate go binary `make binary`
