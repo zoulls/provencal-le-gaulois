@@ -373,6 +373,12 @@ func buildTaskEmbeds(tasks []task.List, cronObj *cron.Cron) []*discordgo.Message
 				},
 			},
 		}
+		if val.URL != "" {
+			msgEmb.Fields = append(msgEmb.Fields, &discordgo.MessageEmbedField{
+				Name:  "URL",
+				Value: val.URL,
+			})
+		}
 		embeds = append(embeds, msgEmb)
 	}
 	return embeds

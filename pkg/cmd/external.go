@@ -226,6 +226,7 @@ func rssParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option)
 		Spec:     durationStr,
 		TaskName: taskName,
 		Task:     job,
+		URL:      rssURL,
 	})
 	if err != nil {
 		log.With("err", err).With("taskName", taskName).Error("cron creation")
@@ -334,6 +335,7 @@ func steamRSSParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Op
 			Spec:     durationStr,
 			TaskName: taskName,
 			Task:     job,
+			URL:      rssURL,
 		})
 		if err != nil {
 			log.With("err", err).With("taskName", taskName).Error("cron creation")
@@ -343,5 +345,124 @@ func steamRSSParser(s *discordgo.Session, i *discordgo.InteractionCreate, opt Op
 		}
 
 		log.Infof("init cron schedule to exec %s every %s", taskName, duration)
+	}
+}
+
+func repostRSS(s *discordgo.Session, i *discordgo.InteractionCreate, opt Option) {
+	optionsParam := i.ApplicationCommandData().Options
+	channelID := i.ChannelID
+
+	var (
+		amount int
+		urlStr string
+		taskID int
+	)
+
+	for _, optParam := range optionsParam {
+		switch optParam.Name {
+		case "amount":
+			amount = int(optParam.IntValue())
+		case "url":
+			urlStr = optParam.StringValue()
+		case "task-id":
+			taskID = int(optParam.IntValue())
+		}
+	}
+
+	if len(urlStr) == 0 && taskID == 0 {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.StringPtr("Please provide either a `url` or a `task-id`."),
+		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
+		return
+	}
+
+	if len(urlStr) > 0 && taskID > 0 {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.StringPtr("Please provide either `url` or `task-id`, not both."),
+		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
+		return
+	}
+
+	if taskID > 0 {
+		taskSelected := task.GetTask(taskID)
+		if !taskSelected.Valid() {
+			_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: utils.StringPtr(fmt.Sprintf("Task %d not found", taskID)),
+			})
+			if err != nil {
+				log.With("err", err).Error("send error message")
+			}
+			return
+		}
+
+		if len(taskSelected.URL) == 0 {
+			_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: utils.StringPtr(fmt.Sprintf("Task %d (%s) does not have an associated RSS URL", taskID, taskSelected.TaskName)),
+			})
+			if err != nil {
+				log.With("err", err).Error("send error message")
+			}
+			return
+		}
+
+		urlStr = taskSelected.URL
+	}
+
+	// Trim spaces and split comma-separated URLs
+	urlsStrTrim := strings.ReplaceAll(urlStr, " ", "")
+	rawURLs := strings.Split(urlsStrTrim, ",")
+	urls := make([]string, 0, len(rawURLs))
+	for _, u := range rawURLs {
+		if len(u) > 0 {
+			urls = append(urls, u)
+		}
+	}
+
+	if len(urls) == 0 {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: utils.StringPtr("No valid URL provided."),
+		})
+		if err != nil {
+			log.With("err", err).Error("send error message")
+		}
+		return
+	}
+
+	totalPosted := 0
+	for _, u := range urls {
+		news, err := rss.GetLastNews(u, amount)
+		if err != nil {
+			log.With("err", err).With("url", u).Error("fetch RSS feed")
+			_, _ = s.ChannelMessageSend(channelID, fmt.Sprintf("Error fetching RSS feed %s: %s", u, err.Error()))
+			continue
+		}
+
+		if len(news) == 0 {
+			_, _ = s.ChannelMessageSend(channelID, fmt.Sprintf("No news found for %s", u))
+			continue
+		}
+
+		// Send news from oldest to newest among the fetched items
+		for idx := len(news) - 1; idx >= 0; idx-- {
+			_, err := s.ChannelMessageSend(channelID, news[idx])
+			if err != nil {
+				log.With("err", err).With("url", u).Error("send repost message")
+			} else {
+				totalPosted++
+			}
+		}
+	}
+
+	_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: utils.StringPtr(fmt.Sprintf("Reposted %d news from %d feed(s).", totalPosted, len(urls))),
+	})
+	if err != nil {
+		log.With("err", err).Error("send completion message")
 	}
 }

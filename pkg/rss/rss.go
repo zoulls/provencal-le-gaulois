@@ -121,3 +121,35 @@ func ParseRSS(url string, nbMax int, lastGUIDs []string) ([]string, []string, er
 
 	return listRSSMsg, lastGUIDs, err
 }
+
+// GetLastNews fetches the last N news items from the RSS feed URL.
+func GetLastNews(url string, amount int) ([]string, error) {
+	if amount <= 0 {
+		return []string{}, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	fp := gofeed.NewParser()
+	feed, err := fp.ParseURLWithContext(url, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	news := make([]string, 0, amount)
+	for k, item := range feed.Items {
+		if k >= amount {
+			break
+		}
+		link := item.Link
+		if link == "" {
+			link = item.GUID
+		}
+		if link != "" {
+			news = append(news, link)
+		}
+	}
+
+	return news, nil
+}

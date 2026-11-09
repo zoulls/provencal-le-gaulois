@@ -4,7 +4,8 @@ Provencal le gaulois is a bot discord written in go.
 ## Main features
 * Use `/` in discord to see all the commands available
 * List and delete messages
-* Publish on a discord channel the latest tweets of Twitter list
+* Scheduled message auto-cleaning
+* Publish and repost latest news from RSS and Steam RSS feeds
 * Event timer for Diablo IV
 
 ## Setup
